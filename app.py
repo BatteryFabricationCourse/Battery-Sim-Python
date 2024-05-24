@@ -1,11 +1,14 @@
 # app.py
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import pybamm
 
 app = Flask(__name__)
+CORS(app)  # This will enable CORS for all routes
 
 @app.route('/simulate', methods=['POST'])
 def simulate():
+    print("New Request: ", request.json)
     data = request.json
     chemistry = data.get('chemistry', 'lithium_ion')
     # Set up PyBAMM model
@@ -24,6 +27,7 @@ def simulate():
     time = sim.solution["Time [s]"].entries
     voltage = sim.solution["Terminal voltage [V]"].entries
 
+    print("Request Answered",jsonify({'time': time.tolist(), 'voltage': voltage.tolist()}))
     return jsonify({'time': time.tolist(), 'voltage': voltage.tolist()})
 
 if __name__ == '__main__':
