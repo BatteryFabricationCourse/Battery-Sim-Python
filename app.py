@@ -10,7 +10,9 @@ CORS(app)  # This will enable CORS for all routes
 def simulate():
     print("New Request: ", request.json)
     data = request.json
-    chemistry = data.get('chemistry', 'lithium_ion')
+    chemistry = data.get('chemistry')
+    temperature = data.get('temperature')
+    
     # Set up PyBAMM model
     if chemistry == 'lithium_ion':
         model = pybamm.lithium_ion.DFN()
@@ -19,13 +21,21 @@ def simulate():
     else:
         return jsonify({'error': 'Unsupported chemistry'}), 400
 
+    parameters = pybamm.ParameterValues("Chen2020")
+    
+    parameters['Ambient temperature [K]'] = 273.15 + temperature
+    parameters['Initial temperature [K]'] = 273.15 + temperature
+    parameters
     # Create simulation
-    sim = pybamm.Simulation(model)
-    sim.solve([0, 3600])  # Simulate for one hour
-
+    sim = pybamm.Simulation(model, parameter_values=parameters)
+    solution = sim.solve([0, 3600])  # Simulate for one hour
     # Extract results
-    time = sim.solution["Time [s]"].entries
-    voltage = sim.solution["Terminal voltage [V]"].entries
+    time = solution["Time [s]"].entries
+    voltage = solution["Terminal voltage [V]"].entries
+    
+    quick_plot = pybamm.QuickPlot(solution)
+    quick_plot.dynamic_plot();
+    
 
     print("Request Answered",jsonify({'time': time.tolist(), 'voltage': voltage.tolist()}))
     return jsonify({'time': time.tolist(), 'voltage': voltage.tolist()})
