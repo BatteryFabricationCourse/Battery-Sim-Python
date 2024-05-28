@@ -33,9 +33,6 @@ def simulate():
     time = solution["Time [s]"].entries
     voltage = solution["Terminal voltage [V]"].entries
     
-    quick_plot = pybamm.QuickPlot(solution)
-    quick_plot.dynamic_plot();
-    
 
     print("Request Answered",jsonify({'time': time.tolist(), 'voltage': voltage.tolist()}))
     return jsonify({'time': time.tolist(), 'voltage': voltage.tolist()})
