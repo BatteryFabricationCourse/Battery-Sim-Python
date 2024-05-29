@@ -25,17 +25,19 @@ def simulate():
     
     parameters['Ambient temperature [K]'] = 273.15 + temperature
     parameters['Initial temperature [K]'] = 273.15 + temperature
-    parameters
     # Create simulation
     sim = pybamm.Simulation(model, parameter_values=parameters)
     solution = sim.solve([0, 3600])  # Simulate for one hour
     # Extract results
-    time = solution["Time [s]"].entries
+    time = solution["Time [h]"].entries
     voltage = solution["Terminal voltage [V]"].entries
     
+    result = [{'title':'Battery Terminal Voltage Over Time'},{'name': "Time [h]", 'values': time.tolist()},{ 'name':'Terminal voltage [V]', 'values': voltage.tolist()}]
+    
+    result_json = jsonify(result)
 
-    print("Request Answered",jsonify({'time': time.tolist(), 'voltage': voltage.tolist()}))
-    return jsonify({'time': time.tolist(), 'voltage': voltage.tolist()})
+    print("Request Answered: ", result)
+    return result_json
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
