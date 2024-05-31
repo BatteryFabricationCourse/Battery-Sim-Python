@@ -102,7 +102,7 @@ def simulate():
         "Rest for 5 minutes",
     )
     ]
-    * 20
+    * 5
 #    + [
 #    (
 #        "Charge at 1 C until 4.0 V",
@@ -138,9 +138,9 @@ def simulate():
     print(f"Running simulation Cycling\n")
     sol = sim.solve(solver=fast_solver)
     
-    exp3graphs.append({"name": "Time [h]", "values":average_array(sol["Time [h]"].entries, 100)})
-    AhtomAh = average_array(np.multiply(sol["Total lithium capacity [A.h]"].entries,  10e-3), 100)
-    exp3graphs.append({"name": "Total lithium capacity [mA.h]", "fname":f"Capacity", "values":AhtomAh})
+    exp3graphs.append({"name": "Time [h]", "values":sol["Time [h]"].entries.tolist()})
+    #AhtomAh = average_array(np.multiply(sol["Total lithium capacity [A.h]"].entries,  10e-3), 100)
+    exp3graphs.append({"name": "Total lithium capacity [mA.h]", "fname":f"Capacity", "values":sol["Total lithium capacity [A.h]"].entries.tolist()})
 
     experiment3_result.append({"graphs": exp3graphs})
     final_result.append(experiment3_result)
@@ -149,7 +149,7 @@ def simulate():
     del experiment3_result
     del sim
     del sol
-    del AhtomAh
+    #del AhtomAh
     
     result_json = jsonify(final_result)
 
