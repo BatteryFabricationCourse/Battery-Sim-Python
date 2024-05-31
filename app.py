@@ -88,7 +88,7 @@ def simulate():
         "Rest for 5 minutes",
     )
     ]
-    * 100
+    * 50
     + [
     (
         "Charge at 1 C until 4.0 V",
