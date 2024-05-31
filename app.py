@@ -60,6 +60,14 @@ def simulate():
         exp1graphs.append({"name": "Time [min]", "values":sol["Time [min]"].entries.tolist()})
         exp1graphs.append({"name": "Terminal voltage [V]", "fname":f"{c_rate}C", "values":sol["Terminal voltage [V]"].entries.tolist()})
     
+    experiment1_result.append({"graphs": exp1graphs})
+    final_result.append(experiment1_result)
+    
+    del exp1graphs
+    del experiment1_result
+    del sim
+    del sol
+    
 
     experiment2_result = [{'title':'Discharging at different C Rates'}]
     exp2graphs = []
@@ -74,7 +82,13 @@ def simulate():
         exp2graphs.append({"name": "Time [min]", "values":sol["Time [min]"].entries.tolist()})
         exp2graphs.append({"name": "Terminal voltage [V]", "fname":f"{c_rate}C", "values":sol["Terminal voltage [V]"].entries.tolist()})
         
+    experiment2_result.append({"graphs": exp2graphs})
+    final_result.append(experiment2_result)
     
+    del exp2graphs
+    del experiment2_result
+    del sim
+    del sol
     
     experiment3_result = [{'title':'Cycling'}]
     exp3graphs = []
@@ -88,7 +102,7 @@ def simulate():
         "Rest for 5 minutes",
     )
     ]
-    * 50
+    * 100
     + [
     (
         "Charge at 1 C until 4.0 V",
@@ -127,14 +141,15 @@ def simulate():
     exp3graphs.append({"name": "Time [h]", "values":average_array(sol["Time [h]"].entries, 100)})
     AhtomAh = average_array(np.multiply(sol["Total lithium capacity [A.h]"].entries,  10e-3), 100)
     exp3graphs.append({"name": "Total lithium capacity [mA.h]", "fname":f"Capacity", "values":AhtomAh})
-    
-    experiment1_result.append({"graphs": exp1graphs})
-    experiment2_result.append({"graphs": exp2graphs})
+
     experiment3_result.append({"graphs": exp3graphs})
-    
-    final_result.append(experiment1_result)
-    final_result.append(experiment2_result)
     final_result.append(experiment3_result)
+    
+    del exp3graphs
+    del experiment3_result
+    del sim
+    del sol
+    del AhtomAh
     
     result_json = jsonify(final_result)
 
