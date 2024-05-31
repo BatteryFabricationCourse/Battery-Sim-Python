@@ -2,10 +2,11 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pybamm
-
+import numpy as np
 app = Flask(__name__)
 CORS(app)  # This will enable CORS for all routes
-model = pybamm.lithium_ion.SPM()
+model = pybamm.lithium_ion.SPM(
+)
 batteries = {
     "NMC532": "Mohtat2020",
     "NCA": "NCA_Kim2011",
@@ -49,35 +50,91 @@ def simulate():
         c_rates = [1]
     
     for c_rate in c_rates:
-        experiment = pybamm.Experiment(
+        experiment1 = pybamm.Experiment(
             [f"Charge at {c_rate}C for 3 hours or until 4.3 V"]
         )
-        sim = pybamm.Simulation(model, parameter_values=parameters, experiment=experiment)
+        sim = pybamm.Simulation(model, parameter_values=parameters, experiment=experiment1)
         print(f"Running simulation C Rate: {c_rate} charging\n")
         sol = sim.solve(initial_soc=0, solver=fast_solver)
+        
         exp1graphs.append({"name": "Time [min]", "values":sol["Time [min]"].entries.tolist()})
         exp1graphs.append({"name": "Terminal voltage [V]", "fname":f"{c_rate}C", "values":sol["Terminal voltage [V]"].entries.tolist()})
-        print(f"Simulation Success C Rate: {c_rate} charging\n")
-    print("Experiment 1 Results: ", experiment1_result)
+    
 
     experiment2_result = [{'title':'Discharging at different C Rates'}]
     exp2graphs = []
     for c_rate in c_rates:
-        experiment = pybamm.Experiment(
+        experiment2 = pybamm.Experiment(
             [f"Discharge at {c_rate}C for 3 hours or until 2.0 V"]
         )
-        sim = pybamm.Simulation(model, parameter_values=parameters, experiment=experiment)
+        sim = pybamm.Simulation(model, parameter_values=parameters, experiment=experiment2)
         print(f"Running simulation C Rate: {c_rate} discharging\n")
         sol = sim.solve(initial_soc=1, solver=fast_solver)
+        
         exp2graphs.append({"name": "Time [min]", "values":sol["Time [min]"].entries.tolist()})
         exp2graphs.append({"name": "Terminal voltage [V]", "fname":f"{c_rate}C", "values":sol["Terminal voltage [V]"].entries.tolist()})
         
-    print("Experiment 2 Results: ", experiment2_result)
+    
+    
+    experiment3_result = [{'title':'Cycling'}]
+    exp3graphs = []
+    experiment3 = pybamm.Experiment(
+        [
+    (
+        "Charge at 1 C until 4.0 V",
+        "Hold at 4.0 V until C/10",
+        "Rest for 5 minutes",
+        "Discharge at 1 C until 2.2 V",
+        "Rest for 5 minutes",
+    )
+    ]
+    * 100
+    + [
+    (
+        "Charge at 1 C until 4.0 V",
+        "Hold at 4.0 V until C/20",
+        "Rest for 30 minutes",
+        "Discharge at C/3 until 2.2 V",
+        "Rest for 30 minutes",
+    ),
+    (
+        "Charge at 1 C until 4.0 V",
+        "Hold at 4.0 V until C/20",
+        "Rest for 30 minutes",
+        "Discharge at 1 C until 2.2 V",
+        "Rest for 30 minutes",
+    ),
+    (
+        "Charge at 1 C until 4.0 V",
+        "Hold at 4.0 V until C/20",
+        "Rest for 30 minutes",
+        "Discharge at 2 C until 2.2 V",
+        "Rest for 30 minutes",
+    ),
+    (
+        "Charge at 1 C until 4.0 V",
+        "Hold at 4.0 V until C/20",
+        "Rest for 30 minutes",
+        pybamm.step.string("Discharge at 3 C until 2.2 V", period=10),
+        "Rest for 30 minutes",
+    ),
+]
+    )
+    sim = pybamm.Simulation(model, parameter_values=parameters, experiment=experiment3)
+    print(f"Running simulation Cycling\n")
+    sol = sim.solve(solver=fast_solver)
+    
+    exp3graphs.append({"name": "Time [h]", "values":average_array(sol["Time [h]"].entries, 100)})
+    AhtomAh = average_array(np.multiply(sol["Total lithium capacity [A.h]"].entries,  10e-3), 100)
+    exp3graphs.append({"name": "Total lithium capacity [mA.h]", "fname":f"Capacity", "values":AhtomAh})
     
     experiment1_result.append({"graphs": exp1graphs})
     experiment2_result.append({"graphs": exp2graphs})
+    experiment3_result.append({"graphs": exp3graphs})
+    
     final_result.append(experiment1_result)
     final_result.append(experiment2_result)
+    final_result.append(experiment3_result)
     
     result_json = jsonify(final_result)
 
@@ -87,37 +144,11 @@ def simulate():
 if __name__ == '__main__':
     app.run()
     
-def run_simulation(c_rate, charge=True):
-    # Define the parameters
-    
-    param = pybamm.ParameterValues("NCA_Kim2011")
-    
-    
-    param.update({"Lower voltage cut-off [V]": 1.8})
-    param.update({"Upper voltage cut-off [V]": 4.5})
-    experiment = None
-    #t_eval = np.linspace(0, 3700 / c_rate, 500)  # Simulate for the appropriate time based on C-rate
-    
-    # Set the current function
-    if charge:
-        experiment = pybamm.Experiment(
-            [f"Charge at {c_rate}C for 3 hours or until 4.3 V"]
-        )
-    else:
-        experiment = pybamm.Experiment(
-            [f"Discharge at {c_rate}C for 3 hours or until 2 V"]
-        )
-    
-    # Set up the simulation
-    sim = pybamm.Simulation(model, parameter_values=param, experiment=experiment)
-    
-    print(f"Running simulation c:{c_rate} charging:{charge}\n")
-    
-    fast_solver = pybamm.CasadiSolver(mode="fast")
-    # Run the simulation
-    if charge:
-        sim.solve(initial_soc=0.0001, solver=fast_solver)
-    else:
-        sim.solve(initial_soc=0.99, solver=fast_solver)
-    
-    return sim.solution, "Charging" if charge else "Discharging"
+def average_array(a, n_averaged_elements = 100):
+    averaged_array = []
+    for i in range(0, len(a), n_averaged_elements):
+        slice_from_index = i
+        slice_to_index = slice_from_index + n_averaged_elements
+        averaged_array.append(np.mean(a[slice_from_index:slice_to_index]))
+        
+    return averaged_array
