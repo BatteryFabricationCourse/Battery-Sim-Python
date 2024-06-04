@@ -48,7 +48,7 @@ def simulate():
             cycles = 2
         
         
-        fast_solver = pybamm.CasadiSolver(mode="safe")
+        fast_solver = pybamm.CasadiSolver(mode="safe without grid")
         
         experiment1_result = [{'title':'Charging at different C Rates'}]
         final_result = []
@@ -143,10 +143,11 @@ def simulate():
         )
         sim = pybamm.Simulation(model, parameter_values=parameters, experiment=experiment3)
         print(f"Running simulation Cycling\n")
-        sol = sim.solve(solver=fast_solver)
-        exp3graphs.append({"name": "Time [h]", "values":sol["Time [h]"].entries.tolist()})
+        solver = pybamm.CasadiSolver("fast", dt_max=100000)
+        sol = sim.solve(solver=solver)
+        exp3graphs.append({"name": "Time [h]", "values":average_array(sol["Time [h]"].entries.tolist())})
         #AhtomAh = average_array(np.multiply(sol["Total lithium capacity [A.h]"].entries,  10e-3), 100)
-        exp3graphs.append({"name": "Discharge capacity [A.h]", "fname":f"Capacity", "values":sol["Discharge capacity [A.h]"].entries.tolist()})
+        exp3graphs.append({"name": "Discharge capacity [A.h]", "fname":f"Capacity", "values":average_array(sol["Discharge capacity [A.h]"].entries.tolist())})
 
         experiment3_result.append({"graphs": exp3graphs})
         final_result.append(experiment3_result)
@@ -169,8 +170,9 @@ def simulate():
 if __name__ == '__main__':
     app.run()
     
-def average_array(a, n_averaged_elements = 100):
+def average_array(a):
     averaged_array = []
+    n_averaged_elements = int(len(a) / 100)
     for i in range(0, len(a), n_averaged_elements):
         slice_from_index = i
         slice_to_index = slice_from_index + n_averaged_elements
