@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "builds": [
     {
       "src": "*.py",
@@ -11,5 +11,10 @@
       "src": "(.*)",
       "dest": "app.py"
     }
-  ]
+  ],
+  "functions": {
+    "app/api/**/*": {
+      "maxDuration": 60
+    }
+  }
 }
