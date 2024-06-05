@@ -1,20 +1,15 @@
 {
   "version": 2,
-  "functions": {
-    "*": {
-      "maxDuration": 60
-    }
-  },
   "builds": [
     {
-      "src": "*.py",
+      "src": "app.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
-      "src": "(.*)",
-      "dest": "app.py"
+      "src": "/simulate-lab1",
+      "dest": "/api/simulate-lab1"
     }
   ]
 }
