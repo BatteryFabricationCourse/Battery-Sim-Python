@@ -89,7 +89,7 @@ def simulate():
         exp2graphs = []
         for c_rate in c_rates:
             experiment2 = pybamm.Experiment(
-                [f"Discharge at {c_rate}C for 3 hours or until 2.0 V"]
+                [f"Discharge at {c_rate}C for 300 hours or until 2.0 V"]
             )
             sim = pybamm.Simulation(model, parameter_values=parameters, experiment=experiment2)
             print(f"Running simulation C Rate: {c_rate} discharging\n")
@@ -160,4 +160,4 @@ def average_array(a):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run()
