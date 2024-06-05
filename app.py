@@ -15,6 +15,14 @@ batteries = {
     "LG M50": "OKane2022"
 }
 
+@app.errorhandler(404)
+def page_not_found(e):
+    return jsonify(["ERROR: " + str(e)])
+
+@app.route("/")
+def home():
+    return "Welp, at least the home page works."
+
 @app.route('/simulate-lab1', methods=['POST'])
 def simulate():
     try:
