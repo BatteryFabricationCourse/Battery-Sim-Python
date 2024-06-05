@@ -2,14 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "app.py",
-      "use": "@vercel/python"
+      "src": "Dockerfile",
+      "use": "@vercel/docker"
     }
   ],
   "routes": [
     {
-      "src": "/simulate-lab1",
-      "dest": "/api/simulate-lab1"
+      "src": "/(.*)",
+      "dest": "/"
     }
   ]
 }
