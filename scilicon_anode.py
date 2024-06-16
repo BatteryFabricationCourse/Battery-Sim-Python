@@ -46,6 +46,7 @@ def silicon_ocp_lithiation_Mark2016(sto):
     )
     return U_lithiation
 
+
 def silicon_ocp_delithiation_Mark2016(sto):
     """
     silicon Open-circuit Potential (OCP) as a a function of the
@@ -131,19 +132,19 @@ def silicon_LGM50_electrolyte_exchange_current_density_Chen2020(
 
 
 scilicon_anode_parameters = {
-        "Maximum concentration in negative electrode [mol.m-3]": 278000.0,
-        "Initial concentration in negative electrode [mol.m-3]": 276610.0,
-        "Negative electrode Bruggeman coefficient (electrode)": 0,
-        "Negative electrode charge transfer coefficient": 0.5,
-        "Negative electrode double-layer capacity [F.m-2]": 0.2,
-        "Negative electrode conductivity [S.m-1]": 215.0,
-        "Negative electrode porosity": 0.25,
-        "Negative particle diffusivity [m2.s-1]": 1.67e-14,
-        "Negative electrode lithiation OCP [V]" : silicon_ocp_lithiation_Mark2016,
-        "Negative electrode delithiation OCP [V]" : silicon_ocp_delithiation_Mark2016,
-        "Negative electrode active material volume fraction": 0.015,
-        "Negative particle radius [m]": 1.52e-06,
-        "Negative electrode exchange-current density [A.m-2]" : silicon_LGM50_electrolyte_exchange_current_density_Chen2020,
-        "Negative electrode density [kg.m-3]": 2650.0,
-        "Negative electrode OCP entropic change [V.K-1]": 0.0,
+    "Maximum concentration in negative electrode [mol.m-3]": 278000.0,
+    "Initial concentration in negative electrode [mol.m-3]": 276610.0,
+    "Negative electrode Bruggeman coefficient (electrode)": 0,
+    "Negative electrode charge transfer coefficient": 0.5,
+    "Negative electrode double-layer capacity [F.m-2]": 0.2,
+    "Negative electrode conductivity [S.m-1]": 215.0,
+    "Negative electrode porosity": 0.25,
+    "Negative particle diffusivity [m2.s-1]": 1.67e-14,
+    "Negative electrode lithiation OCP [V]": silicon_ocp_lithiation_Mark2016,
+    "Negative electrode delithiation OCP [V]": silicon_ocp_delithiation_Mark2016,
+    "Negative electrode active material volume fraction": 0.015,
+    "Negative particle radius [m]": 1.52e-06,
+    "Negative electrode exchange-current density [A.m-2]": silicon_LGM50_electrolyte_exchange_current_density_Chen2020,
+    "Negative electrode density [kg.m-3]": 2650.0,
+    "Negative electrode OCP entropic change [V.K-1]": 0.0,
 }

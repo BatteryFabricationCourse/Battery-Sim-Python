@@ -1,45 +1,61 @@
+# %pip install "pybamm[plot,cite]" -q    # install PyBaMM if it is not installed
+import os
+import matplotlib.pyplot as plt
+import numpy as np
 import pybamm
+import timeit
+from matplotlib import style
 
-# Define a function to simulate a battery with given parameters and degradation models
-def simulate_battery(battery_name, parameter_set):
-    # Create the model
-    try:
-        model = pybamm.lithium_ion.SPM({
-        "particle mechanics": "swelling and cracking",
-        })
+style.use("ggplot")
+os.chdir(pybamm.__path__[0] + "/..")
+pybamm.set_logging_level("INFO")
+start = timeit.default_timer()
+model = pybamm.lithium_ion.DFN(
+    {
+        "particle phases": ("2", "1"),
+        "open-circuit potential": (("single", "current sigmoid"), "single"),
+    }
+)
+param = pybamm.ParameterValues("Chen2020_composite")
 
-        # Load parameter values for the battery
-        param = pybamm.ParameterValues(parameter_set)
+param.update({"Upper voltage cut-off [V]": 4.5})
+param.update({"Lower voltage cut-off [V]": 2.5})
 
-        # Add degradation models for particle cracking
-        model.submodels["negative particle mechanics"] = pybamm.particle_mechanics.CrackPropagation(
-            model.param, "Negative", True, model.options
-        )
-        model.submodels["positive particle mechanics"] = pybamm.particle_mechanics.CrackPropagation(
-            model.param, "Positive", True, model.options
-        )
+param.update(
+    {
+        "Primary: Maximum concentration in negative electrode [mol.m-3]": 28700,
+        "Primary: Initial concentration in negative electrode [mol.m-3]": 23000,
+        "Primary: Negative electrode diffusivity [m2.s-1]": 5.5e-14,
+        "Secondary: Negative electrode diffusivity [m2.s-1]": 1.67e-14,
+        "Secondary: Initial concentration in negative electrode [mol.m-3]": 277000,
+        "Secondary: Maximum concentration in negative electrode [mol.m-3]": 278000,
+    }
+)
+C_rate = 0.5
+capacity = param["Nominal cell capacity [A.h]"]
+I_load = C_rate * capacity
 
-        # Create a simulation
-        sim = pybamm.Simulation(model, parameter_values=param)
+t_eval = np.linspace(0, 10000, 1000)
 
-        # Set up the simulation (e.g., initial conditions, timespan)
-        t_eval = pybamm.linspace(0, 3600)  # Simulate for 1 hour
-        sim.solve([0, 3600])
-
-        # Plot the results
-        sim.plot()
-    except:
-        print("Simulation Failed")
-
-# Define the batteries and their parameter sets
-batteries = {
-    "NMC532": "OKane2022",
-    "NCA": "NCA_Kim2011",
-    "LFP": "Prada2013",
-    "LG M50": "OKane2022"
-}
-
-# Simulate each battery
-for battery_name, parameter_set in batteries.items():
-    print(f"Simulating {battery_name} with parameter set {parameter_set}")
-    simulate_battery(battery_name, parameter_set)
+param["Current function [A]"] = I_load
+v_si = [0.001, 0.04, 0.1]
+total_am_volume_fraction = 0.75
+solution = []
+for v in v_si:
+    param.update(
+        {
+            "Primary: Negative electrode active material volume fraction": (1 - v)
+            * total_am_volume_fraction,  # primary
+            "Secondary: Negative electrode active material volume fraction": v
+            * total_am_volume_fraction,
+        }
+    )
+    print(v)
+    sim = pybamm.Simulation(
+        model,
+        parameter_values=param,
+        solver=pybamm.CasadiSolver(dt_max=5),
+    )
+    solution.append(sim.solve(t_eval=t_eval))
+stop = timeit.default_timer()
+print("running time: " + str(stop - start) + "s")
