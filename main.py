@@ -6,6 +6,8 @@ import flask_cors
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
+# Setup the Rate Limiter
+
 
 
 app = Flask(__name__)
@@ -14,11 +16,12 @@ flask_cors.CORS(app)
 app.config['PROPAGATE_EXCEPTIONS'] = True
 
 limiter = Limiter(
-    app,
-    key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"]
+    get_remote_address,
+    default_limits=["100 per hour", "10 per minute"],
+    storage_uri="memory://",
 )
 
+limiter.init_app(app)
 
 # Define the model and battery parameters
 model = pybamm.lithium_ion.SPM()
@@ -40,7 +43,7 @@ def page_not_found(e):
 def home():
     return "Welp, at least the home page works."
 
-@limiter.limit("5 per minute")
+@limiter.limit("3 per minute")
 @app.route("/simulate-lab1", methods=["POST"])
 def simulate_lab1():
     try:
@@ -89,7 +92,7 @@ def handle_exception(e):
     print(e)
     return jsonify(["ERROR: " + str(e)])
 
-@limiter.limit("5 per minute")
+@limiter.limit("3 per minute")
 @app.route("/simulate-lab2", methods=["POST"])
 def simulate_lab2():
     try:
