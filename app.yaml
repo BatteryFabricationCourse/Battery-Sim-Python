@@ -17,12 +17,3 @@ handlers:
 
 env_variables:
   PYTHONUNBUFFERED: "true"
-
-requirements:
-  libraries:
-    - name: pybamm
-      version: latest
-    - name: flask
-      version: latest
-    - name: numpy
-      version: latest
