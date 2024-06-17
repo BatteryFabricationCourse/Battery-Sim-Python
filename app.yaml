@@ -1,5 +1,6 @@
 runtime: python312
 instance_class: B4
 
-manual_scaling:
-  instances: 1
+basic_scaling:
+  max_instances: 1
+  idle_timeout: 5m
