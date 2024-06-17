@@ -7,6 +7,7 @@ import flask_cors
 app = Flask(__name__)
 
 flask_cors.CORS(app)
+app.config['PROPAGATE_EXCEPTIONS'] = True
 
 # Define the model and battery parameters
 model = pybamm.lithium_ion.SPM()
@@ -71,6 +72,11 @@ def simulate_lab1():
     except Exception as e:
         print(e)
         return jsonify(["ERROR: " + str(e)])
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    print(e)
+    return jsonify(["ERROR: " + str(e)])
 
 
 @app.route("/simulate-lab2", methods=["POST"])
