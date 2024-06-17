@@ -1,5 +1,2 @@
 runtime: python312
-inbound_services:
-  - simulate-lab1
-  - simulate-lab2
 instance_class: B1
