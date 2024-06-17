@@ -1,5 +1,4 @@
 Flask
 pybamm
-gunicorn
 flask-cors
 numpy

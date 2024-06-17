@@ -1,6 +1,1 @@
 runtime: python310
-env: flex
-entrypoint: gunicorn -b :$PORT app:app
-
-manual_scaling:
-  instances: 1
