@@ -3,9 +3,12 @@ import pybamm
 import numpy as np
 import scilicon_anode
 import flask_cors
+from asgiref.wsgi import WsgiToAsgi
+
 app = Flask(__name__)
 
 flask_cors.CORS(app)
+app = WsgiToAsgi(app)
 
 # Define the model and battery parameters
 model = pybamm.lithium_ion.SPM()
@@ -293,4 +296,4 @@ def average_array(a):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=8081)
+    app.run(debug=True)

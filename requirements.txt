@@ -3,3 +3,4 @@ pybamm==24.1
 gunicorn==22.0.0
 flask-cors==4.0.1
 uvicorn==0.30.1
+asgiref
