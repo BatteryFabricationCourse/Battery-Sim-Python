@@ -2,8 +2,10 @@ from flask import Flask, request, jsonify
 import pybamm
 import numpy as np
 import scilicon_anode
-
+import flask_cors
 app = Flask(__name__)
+
+flask_cors.CORS(app)
 
 # Define the model and battery parameters
 model = pybamm.lithium_ion.SPM()
