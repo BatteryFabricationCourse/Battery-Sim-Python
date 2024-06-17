@@ -3,11 +3,22 @@ import pybamm
 import numpy as np
 import scilicon_anode
 import flask_cors
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+
 
 app = Flask(__name__)
 
 flask_cors.CORS(app)
 app.config['PROPAGATE_EXCEPTIONS'] = True
+
+limiter = Limiter(
+    app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"]
+)
+
 
 # Define the model and battery parameters
 model = pybamm.lithium_ion.SPM()
@@ -24,12 +35,12 @@ batteries = {
 def page_not_found(e):
     return jsonify(["ERROR: " + str(e)])
 
-
+@limiter.limit("1 per minute")
 @app.route("/")
 def home():
     return "Welp, at least the home page works."
 
-
+@limiter.limit("5 per minute")
 @app.route("/simulate-lab1", methods=["POST"])
 def simulate_lab1():
     try:
@@ -78,7 +89,7 @@ def handle_exception(e):
     print(e)
     return jsonify(["ERROR: " + str(e)])
 
-
+@limiter.limit("5 per minute")
 @app.route("/simulate-lab2", methods=["POST"])
 def simulate_lab2():
     try:
