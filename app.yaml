@@ -1,6 +1,6 @@
 runtime: python312
 env: flex
-entrypoint: gunicorn -w 4 -k -b :$PORT uvicorn.workers.UvicornWorker app:app
+entrypoint: gunicorn -w 4 -k uvicorn.workers.UvicornWorker app:app
 
 instance_class: F1
 
