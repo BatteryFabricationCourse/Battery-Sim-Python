@@ -6,6 +6,7 @@ basic_scaling:
   idle_timeout: 5m
 
 handlers:
-  - url: /*
+  - url: *
+    static_dir: *
     http_headers:
       Access-Control-Allow-Origin: https://moodle.oulu.fi
