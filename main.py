@@ -12,7 +12,7 @@ import flask_cors
 
 app = Flask(__name__)
 
-flask_cors.CORS(app, origins=["https://moodle.oulu.fi"])
+flask_cors.CORS(app)
 app.config['PROPAGATE_EXCEPTIONS'] = True
 
 #limiter = Limiter(
