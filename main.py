@@ -15,6 +15,7 @@ app = Flask(__name__)
 flask_cors.CORS(app)
 app.config['PROPAGATE_EXCEPTIONS'] = True
 
+self.response.headers['Access-Control-Allow-Origin'] = 'https://moodle.oulu.fi'
 #limiter = Limiter(
 #    get_remote_address,
 #    default_limits=["100 per hour", "10 per minute"],
