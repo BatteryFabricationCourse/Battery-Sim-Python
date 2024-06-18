@@ -7,6 +7,5 @@ basic_scaling:
 
 handlers:
   - url: /.*
-    static_dir: /.*
     http_headers:
       Access-Control-Allow-Origin: https://moodle.oulu.fi
