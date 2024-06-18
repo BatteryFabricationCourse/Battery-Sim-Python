@@ -5,14 +5,14 @@ import scilicon_anode
 import flask_cors
 #from flask_limiter import Limiter
 #from flask_limiter.util import get_remote_address
-
+#http://127.0.0.1:5000/simulate-lab1
 # Setup the Rate Limiter
 
 
 
 app = Flask(__name__)
 
-flask_cors.CORS(app)
+flask_cors.CORS(app, origins=["https://moodle.oulu.fi"])
 app.config['PROPAGATE_EXCEPTIONS'] = True
 
 #limiter = Limiter(
@@ -135,25 +135,25 @@ def simulate_lab2():
         parameters["Current function [A]"] = I_load
 
         fast_solver = pybamm.CasadiSolver("safe", dt_max=500)
-
+    
         sim = pybamm.Simulation(
             model,
             parameter_values=parameters,
             solver=fast_solver,
         )
         t_eval = np.linspace(0, 10000, 1000)
-        solution = sim.solve(t_eval=t_eval)
-
+        sol = sim.solve(t_eval=t_eval)
         experiment_result1 = [{"title": f"Interfacial current density in silicon"}]
         graph1 = []
+
         graph1.append(
-            {"name": "Time [h]", "values": solution["Time [h]"].entries.tolist()}
+            {"name": "Time [h]", "values": sol["Time [h]"].entries.tolist()}
         )
         graph1.append(
             {
-                "name": "Terminal Voltage [V]",
+                "name": "'Loss of capacity to SEI [A.h]",
                 "fname": f"V",
-                "values": solution["Voltage [V]"].entries.tolist(),
+                "values": sol["Loss of capacity to positive SEI [A.h]"].entries.tolist(),
             }
         )
 
@@ -162,13 +162,13 @@ def simulate_lab2():
         experiment_result2 = [{"title": f"Graphite"}]
         graph2 = []
         graph2.append(
-            {"name": "Time [h]", "values": solution["Time [h]"].entries.tolist()}
+            {"name": "Time [h]", "values": sol["Time [h]"].entries.tolist()}
         )
         graph2.append(
             {
                 "name": "Averaged interfacial current density [A.m-2]",
                 "fname": f"V",
-                "values": solution[
+                "values": sol[
                     "X-averaged negative electrode primary interfacial current density [A.m-2]"
                 ].entries.tolist(),
             }
@@ -178,13 +178,13 @@ def simulate_lab2():
         experiment_result3 = [{"title": f"Silicon"}]
         graph3 = []
         graph3.append(
-            {"name": "Time [h]", "values": solution["Time [h]"].entries.tolist()}
+            {"name": "Time [h]", "values": sol["Time [h]"].entries.tolist()}
         )
         graph3.append(
             {
                 "name": "Averaged interfacial current density [A.m-2]",
                 "fname": f"V",
-                "values": solution[
+                "values": sol[
                     "X-averaged negative electrode secondary interfacial current density [A.m-2]"
                 ].entries.tolist(),
             }
