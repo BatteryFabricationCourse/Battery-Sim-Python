@@ -11,6 +11,7 @@ batteries = {
     "Silicon": "Chen2020_composite",
 }
 
+
 def simulate_lab1(request):
     try:
         print("New Request: ", request.json)
@@ -29,13 +30,21 @@ def simulate_lab1(request):
             return jsonify({"error": "Unsupported chemistry"}), 400
 
         parameters = pybamm.ParameterValues(batteries[battery_type])
-        update_parameters(parameters, temperature, capacity, PosElectrodeThickness, None)
+        update_parameters(
+            parameters, temperature, capacity, PosElectrodeThickness, None
+        )
 
         fast_solver = pybamm.CasadiSolver(mode="safe")
 
         final_result = []
-        final_result.append(run_charging_experiments(c_rates, "Charge", model, parameters, fast_solver))
-        final_result.append(run_charging_experiments(c_rates, "Discharge", model, parameters, fast_solver))
+        final_result.append(
+            run_charging_experiments(c_rates, "Charge", model, parameters, fast_solver)
+        )
+        final_result.append(
+            run_charging_experiments(
+                c_rates, "Discharge", model, parameters, fast_solver
+            )
+        )
         final_result.append(run_cycling_experiment(cycles, model, parameters))
 
         print("Request Answered: ", final_result)

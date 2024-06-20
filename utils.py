@@ -1,7 +1,18 @@
 import pybamm
 import numpy as np
 
-def update_parameters(parameters, temperature, capacity, PosElectrodeThickness, silicon_percent):
+
+def average_array(a):
+    averaged_array = []
+    n_averaged_elements = max(1, len(a) // 100)
+    for i in range(0, len(a), n_averaged_elements):
+        averaged_array.append(np.mean(a[i : i + n_averaged_elements]))
+    return averaged_array
+
+
+def update_parameters(
+    parameters, temperature, capacity, PosElectrodeThickness, silicon_percent
+):
     if temperature and temperature != 0:
         parameters.update({"Ambient temperature [K]": float(temperature)})
     if capacity and capacity != 0:
@@ -21,8 +32,9 @@ def update_parameters(parameters, temperature, capacity, PosElectrodeThickness, 
             }
         )
 
+
 def run_charging_experiments(c_rates, mode, model, parameters, solver):
-    experiment_result = [{"title": f"{mode.capitalize()}ing at different C Rates"}]
+    experiment_result = [{"title": f"{mode.capitalize()[:-1]}ing at different C Rates"}]
     graphs = []
     y_axis_label = None
     for c_rate in c_rates:
@@ -42,7 +54,7 @@ def run_charging_experiments(c_rates, mode, model, parameters, solver):
         sim = pybamm.Simulation(
             model, parameter_values=parameters, experiment=experiment
         )
-        print(f"Running simulation C Rate: {c_rate} {mode.lower()}ing\n")
+        print(f"Running simulation C Rate: {c_rate} {mode.lower()[:-1]}ing\n")
         sol = sim.solve(initial_soc=initial_soc, solver=solver)
         graphs.append(
             {"name": y_axis_label, "values": sol[y_axis_label].entries.tolist()}
@@ -57,6 +69,7 @@ def run_charging_experiments(c_rates, mode, model, parameters, solver):
 
     experiment_result.append({"graphs": graphs})
     return experiment_result
+
 
 def run_cycling_experiment(cycles, model, parameters):
     experiment_result = [{"title": "Cycling"}]

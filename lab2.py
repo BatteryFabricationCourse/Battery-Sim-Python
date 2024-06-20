@@ -3,6 +3,7 @@ import pybamm
 import numpy as np
 from utils import update_parameters
 
+
 def simulate_lab2(request):
     try:
         print("New Request: ", request.json)
@@ -46,19 +47,43 @@ def simulate_lab2(request):
         experiment_result1 = [{"title": f"Interfacial current density in silicon"}]
         graph1 = []
         graph1.append({"name": "Time [h]", "values": sol["Time [h]"].entries.tolist()})
-        graph1.append({"name": "'Loss of capacity to SEI [A.h]", "fname": f"V", "values": sol["Loss of capacity to positive SEI [A.h]"].entries.tolist()})
+        graph1.append(
+            {
+                "name": "'Loss of capacity to SEI [A.h]",
+                "fname": f"V",
+                "values": sol[
+                    "Loss of capacity to positive SEI [A.h]"
+                ].entries.tolist(),
+            }
+        )
         experiment_result1.append({"graphs": graph1})
 
         experiment_result2 = [{"title": f"Graphite"}]
         graph2 = []
         graph2.append({"name": "Time [h]", "values": sol["Time [h]"].entries.tolist()})
-        graph2.append({"name": "Averaged interfacial current density [A.m-2]", "fname": f"V", "values": sol["X-averaged negative electrode primary interfacial current density [A.m-2]"].entries.tolist()})
+        graph2.append(
+            {
+                "name": "Averaged interfacial current density [A.m-2]",
+                "fname": f"V",
+                "values": sol[
+                    "X-averaged negative electrode primary interfacial current density [A.m-2]"
+                ].entries.tolist(),
+            }
+        )
         experiment_result2.append({"graphs": graph2})
 
         experiment_result3 = [{"title": f"Silicon"}]
         graph3 = []
         graph3.append({"name": "Time [h]", "values": sol["Time [h]"].entries.tolist()})
-        graph3.append({"name": "Averaged interfacial current density [A.m-2]", "fname": f"V", "values": sol["X-averaged negative electrode secondary interfacial current density [A.m-2]"].entries.tolist()})
+        graph3.append(
+            {
+                "name": "Averaged interfacial current density [A.m-2]",
+                "fname": f"V",
+                "values": sol[
+                    "X-averaged negative electrode secondary interfacial current density [A.m-2]"
+                ].entries.tolist(),
+            }
+        )
         experiment_result3.append({"graphs": graph3})
 
         final_result = [experiment_result1, experiment_result2, experiment_result3]
