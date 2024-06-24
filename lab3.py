@@ -7,7 +7,7 @@ from utils import (
     average_array,
 )
 
-model = pybamm.lithium_ion.SPM()
+model = pybamm.lithium_ion.SPMe()
 batteries = {
     "NMC532": "Mohtat2020",
     "NCA": "NCA_Kim2011",
@@ -97,6 +97,26 @@ def simulate_lab3(request):
                 "name": "Terminal Voltage [V]",
                 "fname": "Voltage",
                 "values": average_array(sol["Terminal voltage [V]"].entries.tolist()),
+            }
+        )
+        experiment_result.append({"graphs": graphs})
+        final_result.append(experiment_result)
+        
+        graphs = []
+
+        experiment_result = [{"title": "Loss"}]
+
+        graphs.append(
+            {
+                "name": "Cycle",
+                "values": sol.summary_variables["Cycle number"].tolist(),
+            }
+        )
+        graphs.append(
+            {
+                "name": "Capacity [A.h]",
+                "fname": "Capacity",
+                "values": sol.summary_variables["Change in negative electrode capacity [A.h]"].tolist(),
             }
         )
         experiment_result.append({"graphs": graphs})

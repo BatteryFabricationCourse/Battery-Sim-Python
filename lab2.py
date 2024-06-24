@@ -85,8 +85,31 @@ def simulate_lab2(request):
             }
         )
         experiment_result3.append({"graphs": graph3})
+        
+        experiment_result4 = [{"title": f"Silicon"}]
+        graph4 = []
+        graph4.append({"name": "Time [h]", "values": sol["Time [h]"].entries.tolist()})
+        graph4.append(
+            {
+                "name": "Total lithium [mol]",
+                "fname": f"Total",
+                "values": sol[
+                    "Total lithium [mol]"
+                ].entries.tolist(),
+            }
+        )
+        graph4.append(
+            {
+                "name": "Total lithium [mol]",
+                "fname": f"Neg Electrode",
+                "values": sol[
+                    "Total lithium in negative electrode [mol]"
+                ].entries.tolist(),
+            }
+        )
+        experiment_result4.append({"graphs": graph4})
 
-        final_result = [experiment_result1, experiment_result2, experiment_result3]
+        final_result = [experiment_result1, experiment_result2, experiment_result3, experiment_result4]
         print("Request Answered: ", final_result)
         return jsonify(final_result)
 

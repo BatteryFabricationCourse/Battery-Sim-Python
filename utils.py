@@ -37,6 +37,7 @@ def run_charging_experiments(c_rates, mode, model, parameters, solver):
     experiment_result = [{"title": f"{mode.capitalize()[:-1]}ing at different C Rates"}]
     graphs = []
     y_axis_label = None
+    once = False
     for c_rate in c_rates:
         if mode == "Charge":
             experiment = pybamm.Experiment(
