@@ -4,7 +4,7 @@ from utils import update_parameters, run_charging_experiments, run_cycling_exper
 
 model = pybamm.lithium_ion.SPM()
 batteries = {
-    "NMC532": "Mohtat2020",
+    "NMC": "Mohtat2020",
     "NCA": "NCA_Kim2011",
     "LFP": "Prada2013",
     "LG M50": "OKane2022",
@@ -30,11 +30,9 @@ def simulate_lab1(request):
             return jsonify({"error": "Unsupported chemistry"}), 400
 
         parameters = pybamm.ParameterValues(batteries[battery_type])
-        update_parameters(
-            parameters, temperature, capacity, PosElectrodeThickness, None
-        )
+        update_parameters(parameters, temperature, capacity, None, None)
 
-        fast_solver = pybamm.CasadiSolver(mode="safe")
+        fast_solver = pybamm.CasadiSolver()
 
         final_result = []
         final_result.append(

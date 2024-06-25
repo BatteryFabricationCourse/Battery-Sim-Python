@@ -40,76 +40,236 @@ def simulate_lab2(request):
 
         fast_solver = pybamm.CasadiSolver("safe", dt_max=500)
 
-        sim = pybamm.Simulation(model, parameter_values=parameters, solver=fast_solver)
-        t_eval = np.linspace(0, 10000, 1000)
-        sol = sim.solve(t_eval=t_eval)
+        experiment = pybamm.Experiment(
+            [
+                (
+                    "Charge at 1 C until 4.0 V",
+                    "Hold at 4.0 V until C/10",
+                    "Rest for 5 minutes",
+                    "Discharge at 1 C until 2.2 V",
+                    "Rest for 5 minutes",
+                )
+            ]
+            * 10
+        )
 
-        experiment_result1 = [{"title": f"Interfacial current density in silicon"}]
-        graph1 = []
-        graph1.append({"name": "Time [h]", "values": sol["Time [h]"].entries.tolist()})
-        graph1.append(
+        sim = pybamm.Simulation(
+            model,
+            parameter_values=parameters,
+            solver=fast_solver,
+            experiment=experiment,
+        )
+        t_eval = np.linspace(0, 10000, 1000)
+        sol = sim.solve(t_eval=t_eval, calc_esoh=False)
+
+        # Plot 1
+        plot1 = []
+        plot1.append({"name": "Time [h]", "values": sol["Time [h]"].entries.tolist()})
+        plot1.append(
             {
-                "name": "'Loss of capacity to SEI [A.h]",
-                "fname": f"V",
+                "name": "Loss of active material in negative electrode [%]",
+                "fname": "Negative",
+                "values": sol[
+                    "Loss of active material in negative electrode [%]"
+                ].entries.tolist(),
+            }
+        )
+        plot1.append(
+            {
+                "name": "Loss of active material in positive electrode [%]",
+                "fname": "Positive",
+                "values": sol[
+                    "Loss of active material in positive electrode [%]"
+                ].entries.tolist(),
+            }
+        )
+        experiment_result1 = [{"title": "Loss of Active Material"}, {"graphs": plot1}]
+
+        # Plot 2
+        plot2 = []
+        plot2.append({"name": "Time [h]", "values": sol["Time [h]"].entries.tolist()})
+        plot2.append(
+            {
+                "name": "Loss of capacity to positive SEI [A.h]",
+                "fname": "Positive_SEI",
                 "values": sol[
                     "Loss of capacity to positive SEI [A.h]"
                 ].entries.tolist(),
             }
         )
-        experiment_result1.append({"graphs": graph1})
-
-        experiment_result2 = [{"title": f"Graphite"}]
-        graph2 = []
-        graph2.append({"name": "Time [h]", "values": sol["Time [h]"].entries.tolist()})
-        graph2.append(
+        plot2.append(
             {
-                "name": "Averaged interfacial current density [A.m-2]",
-                "fname": f"V",
+                "name": "Loss of capacity to positive SEI on cracks [A.h]",
+                "fname": "Positive_SEI_Cracks",
                 "values": sol[
-                    "X-averaged negative electrode primary interfacial current density [A.m-2]"
+                    "Loss of capacity to positive SEI on cracks [A.h]"
                 ].entries.tolist(),
             }
         )
-        experiment_result2.append({"graphs": graph2})
-
-        experiment_result3 = [{"title": f"Silicon"}]
-        graph3 = []
-        graph3.append({"name": "Time [h]", "values": sol["Time [h]"].entries.tolist()})
-        graph3.append(
+        plot2.append(
             {
-                "name": "Averaged interfacial current density [A.m-2]",
-                "fname": f"V",
+                "name": "Loss of capacity to positive lithium plating [A.h]",
+                "fname": "Positive_Lithium_Plating",
                 "values": sol[
-                    "X-averaged negative electrode secondary interfacial current density [A.m-2]"
+                    "Loss of capacity to positive lithium plating [A.h]"
                 ].entries.tolist(),
             }
         )
-        experiment_result3.append({"graphs": graph3})
-        
-        experiment_result4 = [{"title": f"Silicon"}]
-        graph4 = []
-        graph4.append({"name": "Time [h]", "values": sol["Time [h]"].entries.tolist()})
-        graph4.append(
+        experiment_result2 = [{"title": "Loss of Capacity"}, {"graphs": plot2}]
+
+        # Plot 3
+        plot3 = []
+        plot3.append({"name": "Time [h]", "values": sol["Time [h]"].entries.tolist()})
+        plot3.append(
+            {
+                "name": "Loss of lithium inventory [%]",
+                "fname": "Lithium_Inventory",
+                "values": sol["Loss of lithium inventory [%]"].entries.tolist(),
+            }
+        )
+        plot3.append(
+            {
+                "name": "Loss of lithium inventory, including electrolyte [%]",
+                "fname": "Lithium_Inventory_Electrolyte",
+                "values": sol[
+                    "Loss of lithium inventory, including electrolyte [%]"
+                ].entries.tolist(),
+            }
+        )
+        plot3.append(
+            {
+                "name": "Loss of lithium to positive SEI [mol]",
+                "fname": "Lithium_Positive_SEI",
+                "values": sol["Loss of lithium to positive SEI [mol]"].entries.tolist(),
+            }
+        )
+        plot3.append(
+            {
+                "name": "Loss of lithium to positive SEI on cracks [mol]",
+                "fname": "Lithium_Positive_SEI_Cracks",
+                "values": sol[
+                    "Loss of lithium to positive SEI on cracks [mol]"
+                ].entries.tolist(),
+            }
+        )
+        plot3.append(
+            {
+                "name": "Loss of lithium to positive lithium plating [mol]",
+                "fname": "Lithium_Positive_Lithium_Plating",
+                "values": sol[
+                    "Loss of lithium to positive lithium plating [mol]"
+                ].entries.tolist(),
+            }
+        )
+        experiment_result3 = [{"title": "Loss of Lithium"}, {"graphs": plot3}]
+
+        # Plot 4
+        plot4 = []
+        plot4.append({"name": "Time [h]", "values": sol["Time [h]"].entries.tolist()})
+        plot4.append(
+            {
+                "name": "Negative electrode capacity [A.h]",
+                "fname": "Negative_Capacity",
+                "values": sol["Negative electrode capacity [A.h]"].entries.tolist(),
+            }
+        )
+        plot4.append(
+            {
+                "name": "Positive electrode capacity [A.h]",
+                "fname": "Positive_Capacity",
+                "values": sol["Positive electrode capacity [A.h]"].entries.tolist(),
+            }
+        )
+        experiment_result4 = [
+            {"title": "Change in Electrode Capacity"},
+            {"graphs": plot4},
+        ]
+
+        # Plot 5
+        plot5 = []
+        plot5.append({"name": "Time [h]", "values": sol["Time [h]"].entries.tolist()})
+        plot5.append(
             {
                 "name": "Total lithium [mol]",
-                "fname": f"Total",
-                "values": sol[
-                    "Total lithium [mol]"
-                ].entries.tolist(),
+                "fname": "Total_Lithium",
+                "values": sol["Total lithium [mol]"].entries.tolist(),
             }
         )
-        graph4.append(
+        plot5.append(
             {
-                "name": "Total lithium [mol]",
-                "fname": f"Neg Electrode",
+                "name": "Total lithium in electrolyte [mol]",
+                "fname": "Total_Lithium_Electrolyte",
+                "values": sol["Total lithium in electrolyte [mol]"].entries.tolist(),
+            }
+        )
+        plot5.append(
+            {
+                "name": "Total lithium in negative electrode [mol]",
+                "fname": "Total_Lithium_Negative",
                 "values": sol[
                     "Total lithium in negative electrode [mol]"
                 ].entries.tolist(),
             }
         )
-        experiment_result4.append({"graphs": graph4})
+        plot5.append(
+            {
+                "name": "Total lithium in particles [mol]",
+                "fname": "Total_Lithium_Particles",
+                "values": sol["Total lithium in particles [mol]"].entries.tolist(),
+            }
+        )
+        plot5.append(
+            {
+                "name": "Total lithium in positive electrode [mol]",
+                "fname": "Total_Lithium_Positive",
+                "values": sol[
+                    "Total lithium in positive electrode [mol]"
+                ].entries.tolist(),
+            }
+        )
+        plot5.append(
+            {
+                "name": "Total lithium lost [mol]",
+                "fname": "Total_Lithium_Lost",
+                "values": sol["Total lithium lost [mol]"].entries.tolist(),
+            }
+        )
+        plot5.append(
+            {
+                "name": "Total lithium lost from electrolyte [mol]",
+                "fname": "Total_Lithium_Lost_Electrolyte",
+                "values": sol[
+                    "Total lithium lost from electrolyte [mol]"
+                ].entries.tolist(),
+            }
+        )
+        plot5.append(
+            {
+                "name": "Total lithium lost from particles [mol]",
+                "fname": "Total_Lithium_Lost_Particles",
+                "values": sol[
+                    "Total lithium lost from particles [mol]"
+                ].entries.tolist(),
+            }
+        )
+        plot5.append(
+            {
+                "name": "Total lithium lost to side reactions [mol]",
+                "fname": "Total_Lithium_Lost_Side_Reactions",
+                "values": sol[
+                    "Total lithium lost to side reactions [mol]"
+                ].entries.tolist(),
+            }
+        )
+        experiment_result5 = [{"title": "Total Lithium"}, {"graphs": plot5}]
 
-        final_result = [experiment_result1, experiment_result2, experiment_result3, experiment_result4]
+        final_result = [
+            experiment_result1,
+            experiment_result2,
+            experiment_result3,
+            experiment_result4,
+            experiment_result5,
+        ]
         print("Request Answered: ", final_result)
         return jsonify(final_result)
 

@@ -9,7 +9,7 @@ from utils import (
 
 model = pybamm.lithium_ion.SPMe()
 batteries = {
-    "NMC532": "Mohtat2020",
+    "NMC": "Mohtat2020",
     "NCA": "NCA_Kim2011",
     "LFP": "Prada2013",
     "LG M50": "OKane2022",
@@ -101,7 +101,7 @@ def simulate_lab3(request):
         )
         experiment_result.append({"graphs": graphs})
         final_result.append(experiment_result)
-        
+
         graphs = []
 
         experiment_result = [{"title": "Loss"}]
@@ -116,7 +116,9 @@ def simulate_lab3(request):
             {
                 "name": "Capacity [A.h]",
                 "fname": "Capacity",
-                "values": sol.summary_variables["Change in negative electrode capacity [A.h]"].tolist(),
+                "values": sol.summary_variables[
+                    "Change in negative electrode capacity [A.h]"
+                ].tolist(),
             }
         )
         experiment_result.append({"graphs": graphs})
