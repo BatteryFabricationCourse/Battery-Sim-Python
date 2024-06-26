@@ -1,8 +1,8 @@
 from flask import jsonify
 import pybamm
 from utils import update_parameters, run_charging_experiments, run_cycling_experiment
+import numpy
 
-model = pybamm.lithium_ion.SPM()
 batteries = {
     "NMC": "Mohtat2020",
     "NCA": "NCA_Kim2011",
@@ -32,20 +32,63 @@ def simulate_lab1(request):
         parameters = pybamm.ParameterValues(batteries[battery_type])
         update_parameters(parameters, temperature, capacity, None, None)
 
-        fast_solver = pybamm.CasadiSolver()
-
+        solver = pybamm.CasadiSolver("safe")
+        model = pybamm.lithium_ion.SPM()
+        
+        parameters.set_initial_stoichiometries(1);
         final_result = []
         final_result.append(
-            run_charging_experiments(c_rates, "Charge", model, parameters, fast_solver)
+            run_charging_experiments(c_rates, "Charge", model, parameters, solver)
         )
         final_result.append(
             run_charging_experiments(
-                c_rates, "Discharge", model, parameters, fast_solver
+                c_rates, "Discharge", model, parameters, solver
             )
         )
-        final_result.append(run_cycling_experiment(cycles, model, parameters))
+        
+        
+        
+        #Cycling
+        experiment = pybamm.Experiment(
+            [
+                (f"Discharge at 10C until 2V",
+        "Rest for 1 minute",
+                f"Charge at 10C until 4V",
+            f"Hold at 4.2V until C/50"
+    )
+            ]
+            * cycles
+        )
+        
+        model = pybamm.lithium_ion.SPM()
+        sim = pybamm.Simulation(model, parameter_values=parameters, experiment=experiment)
+        print("Running simulation Cycling\n")
+        sol = sim.solve(solver=solver)
+
+        experiment_result = [{"title": "Cycling"}]
+        graphs = []
+        print(sol.summary_variables["Maximum measured discharge capacity [A.h]"].tolist())
+        graphs.append(
+            {
+                "name": "Cycle",
+                "values": sol.summary_variables["Cycle number"].tolist(),
+            }
+        )
+        graphs.append(
+            {
+                "name": "Capacity [A.h]",
+                "fname": "Capacity",
+                "values": sol.summary_variables["Capacity [A.h]"].tolist(),
+            }
+        )
+
+        experiment_result.append({"graphs": graphs})
+        
+        final_result.append(experiment_result)
 
         print("Request Answered: ", final_result)
+        with open('lastResponse.json', 'w', encoding='utf-8') as f:
+            f.write(str(final_result))
         return jsonify(final_result)
 
     except Exception as e:

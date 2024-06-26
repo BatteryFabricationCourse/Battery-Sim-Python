@@ -45,7 +45,6 @@ def simulate_lab3(request):
         update_parameters(parameters, temperature, None, None, None)
 
         final_result = []
-        experiment_result = [{"title": "Capacity over Cycles"}]
         graphs = []
         experiment = pybamm.Experiment(
             [
@@ -66,6 +65,7 @@ def simulate_lab3(request):
         solver = pybamm.CasadiSolver("fast", dt_max=10000)
         sol = sim.solve(solver=solver)
 
+        experiment_result = [{"title": "Capacity over Cycles"}]
         graphs.append(
             {
                 "name": "Cycle",

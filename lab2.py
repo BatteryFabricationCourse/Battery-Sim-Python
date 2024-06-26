@@ -12,10 +12,11 @@ def simulate_lab2(request):
         c_rates = data.get("C Rates", [1])
         silicon_percent = data.get("Silicon Percentage")
 
-        model = pybamm.lithium_ion.DFN(
+        model = pybamm.lithium_ion.SPMe(
             {
                 "particle phases": ("2", "1"),
                 "open-circuit potential": (("single", "current sigmoid"), "single"),
+                "SEI": "solvent-diffusion limited"
             }
         )
 
@@ -38,29 +39,32 @@ def simulate_lab2(request):
 
         parameters["Current function [A]"] = I_load
 
-        fast_solver = pybamm.CasadiSolver("safe", dt_max=500)
+        fast_solver = pybamm.CasadiSolver("fast with events", dt_max=10)
+        #pybamm.settings.set_smoothing_parameters(1)
 
-        experiment = pybamm.Experiment(
-            [
-                (
-                    "Charge at 1 C until 4.0 V",
-                    "Hold at 4.0 V until C/10",
-                    "Rest for 5 minutes",
-                    "Discharge at 1 C until 2.2 V",
-                    "Rest for 5 minutes",
-                )
-            ]
-            * 10
-        )
+    #    cycling_experiment = pybamm.Experiment(
+    #    [
+    #        (
+    #            "Charge at 1 C until 4.0 V",
+    #            "Hold at 4.0 V until C/10",
+    #            "Rest for 5 minutes",
+    #            "Discharge at 1 C until 2.2 V",
+    #            "Rest for 5 minutes",
+    #        )
+    #    ]
+    #    * 20,
+    #    #period="1 hour"
+    #)
 
+        print("Running experiment")
         sim = pybamm.Simulation(
             model,
             parameter_values=parameters,
             solver=fast_solver,
-            experiment=experiment,
+            #experiment=cycling_experiment,
         )
-        t_eval = np.linspace(0, 10000, 1000)
-        sol = sim.solve(t_eval=t_eval, calc_esoh=False)
+        t_eval = np.linspace(0, 36000, 1000)
+        sol = sim.solve(calc_esoh=False, t_eval=t_eval)
 
         # Plot 1
         plot1 = []
