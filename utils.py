@@ -1,13 +1,33 @@
 import pybamm
 import numpy as np
+from scipy.interpolate import PchipInterpolator
 
 
-def average_array(a):
-    averaged_array = []
-    n_averaged_elements = max(1, len(a) // 100)
-    for i in range(0, len(a), n_averaged_elements):
-        averaged_array.append(np.mean(a[i : i + n_averaged_elements]))
-    return averaged_array
+def interpolate_array(input_array, output_size):
+    """
+    Interpolates the values in the input array to generate an output array of the specified size.
+
+    Parameters:
+    input_array (list or numpy array): The array of numbers to interpolate.
+    output_size (int): The size of the output array.
+
+    Returns:
+    numpy array: The interpolated array of the specified size.
+    """
+    input_array = np.array(input_array)
+    input_size = len(input_array)
+    
+    # Create the indices for the input and output arrays
+    input_indices = np.arange(input_size)
+    output_indices = np.linspace(0, input_size - 1, output_size)
+    
+    # Create the PCHIP interpolation function
+    pchip_interp_func = PchipInterpolator(input_indices, input_array)
+    
+    # Interpolate the values
+    output_array = pchip_interp_func(output_indices)
+    
+    return output_array.tolist()
 
 
 def update_parameters(

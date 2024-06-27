@@ -1,10 +1,12 @@
 from flask import jsonify
 import pybamm
+import numpy
+from scipy.ndimage import interpolation
 from utils import (
     update_parameters,
     run_charging_experiments,
     run_cycling_experiment,
-    average_array,
+    interpolate_array,
 )
 
 model = pybamm.lithium_ion.SPMe()
@@ -63,8 +65,10 @@ def simulate_lab3(request):
         )
         print("Running simulation Cycling\n")
         solver = pybamm.CasadiSolver("fast", dt_max=10000)
-        sol = sim.solve(solver=solver)
+        sol = sim.solve(solver=solver, save_at_cycles=1, initial_soc=0.1)
 
+        
+        # Prepare data for plotting
         experiment_result = [{"title": "Capacity over Cycles"}]
         graphs.append(
             {
@@ -84,47 +88,55 @@ def simulate_lab3(request):
 
         graphs = []
 
-        experiment_result = [{"title": "Voltage over time"}]
-
+        voltage = []
+        
+        for cycle in sol.cycles:
+            voltage += interpolate_array(cycle["Voltage [V]"].entries, int(5000 / cycles))
+        
+        
+        cycles_for_voltage_plot = numpy.linspace(0, cycles, len(voltage))
+        print(len(voltage))
+        print(len(cycles_for_voltage_plot))
+        experiment_result = [{"title": "Voltage over Cycles"}]
         graphs.append(
             {
-                "name": "Time [h]",
-                "values": average_array(sol["Time [h]"].entries.tolist()),
+                "name": "Cycle",
+                "values": cycles_for_voltage_plot.tolist(),
             }
         )
         graphs.append(
             {
                 "name": "Terminal Voltage [V]",
                 "fname": "Voltage",
-                "values": average_array(sol["Terminal voltage [V]"].entries.tolist()),
+                "values": voltage,
             }
         )
         experiment_result.append({"graphs": graphs})
         final_result.append(experiment_result)
 
-        graphs = []
+        #graphs = []
 
-        experiment_result = [{"title": "Loss"}]
+        #experiment_result = [{"title": "Loss"}]
 
-        graphs.append(
-            {
-                "name": "Cycle",
-                "values": sol.summary_variables["Cycle number"].tolist(),
-            }
-        )
-        graphs.append(
-            {
-                "name": "Capacity [A.h]",
-                "fname": "Capacity",
-                "values": sol.summary_variables[
-                    "Change in negative electrode capacity [A.h]"
-                ].tolist(),
-            }
-        )
-        experiment_result.append({"graphs": graphs})
-        final_result.append(experiment_result)
+        #graphs.append(
+        #    {
+        #        "name": "Cycle",
+        #        "values": sol.summary_variables["Cycle number"].tolist(),
+        #    }
+        #)
+        #graphs.append(
+        #    {
+        #        "name": "Capacity [A.h]",
+        #        "fname": "Capacity",
+        #        "values": sol.summary_variables[
+        #            "Change in negative electrode capacity [A.h]"
+        #        ].tolist(),
+        #    }
+        #)
+        #experiment_result.append({"graphs": graphs})
+        #final_result.append(experiment_result)
 
-        print("Request Answered: ", final_result)
+        #print("Request Answered: ", final_result)
         return jsonify(final_result)
 
     except Exception as e:
