@@ -1,7 +1,7 @@
 from flask import jsonify
 import pybamm
 import numpy as np
-from utils import update_parameters
+import utils
 
 
 def simulate_lab2(request):
@@ -10,9 +10,10 @@ def simulate_lab2(request):
         data = request.json
         temperature = data.get("Ambient temperature [K]")
         c_rates = data.get("C Rates", [1])
+        cycles= 3
         silicon_percent = data.get("Silicon Percentage")
 
-        model = pybamm.lithium_ion.SPMe(
+        model = pybamm.lithium_ion.DFN(
             {
                 "particle phases": ("2", "1"),
                 "open-circuit potential": (("single", "current sigmoid"), "single"),
@@ -32,162 +33,35 @@ def simulate_lab2(request):
                 "Secondary: Maximum concentration in negative electrode [mol.m-3]": 278000,
             }
         )
-        update_parameters(parameters, temperature, None, None, silicon_percent)
+        utils.update_parameters(parameters, temperature, None, None, silicon_percent)
 
-        capacity = parameters["Nominal cell capacity [A.h]"]
-        I_load = c_rates[0] * capacity
 
-        parameters["Current function [A]"] = I_load
-
-        fast_solver = pybamm.CasadiSolver("fast with events", dt_max=10)
-        #pybamm.settings.set_smoothing_parameters(1)
-
-    #    cycling_experiment = pybamm.Experiment(
-    #    [
-    #        (
-    #            "Charge at 1 C until 4.0 V",
-    #            "Hold at 4.0 V until C/10",
-    #            "Rest for 5 minutes",
-    #            "Discharge at 1 C until 2.2 V",
-    #            "Rest for 5 minutes",
-    #        )
-    #    ]
-    #    * 20,
-    #    #period="1 hour"
-    #)
+        fast_solver = pybamm.CasadiSolver("safe", dt_max=3600, extra_options_setup={"max_num_steps": 1000})
+        s = pybamm.step.string
+        cycling_experiment = pybamm.Experiment(
+        [
+            (
+                s("Discharge at 1 C for 10 hours or until 3.0 V", period="1 hour"),
+                s("Rest for 30 minutes", period="30 minutes"),
+                s("Charge at 1 C until 4.1 V", period="30 minutes"),
+                s("Hold at 4.1 V until 50 mA", period="30 minutes"),
+                s("Rest for 30 minutes", period="30 minutes"),
+            )
+        ]
+        * cycles,
+    )
 
         print("Running experiment")
         sim = pybamm.Simulation(
             model,
             parameter_values=parameters,
             solver=fast_solver,
-            #experiment=cycling_experiment,
+            experiment=cycling_experiment,
         )
-        t_eval = np.linspace(0, 36000, 1000)
-        sol = sim.solve(calc_esoh=False, t_eval=t_eval)
-
-        # Plot 1
-        plot1 = []
-        plot1.append({"name": "Time [h]", "values": sol["Time [h]"].entries.tolist()})
-        plot1.append(
-            {
-                "name": "Loss of active material in negative electrode [%]",
-                "fname": "Negative",
-                "values": sol[
-                    "Loss of active material in negative electrode [%]"
-                ].entries.tolist(),
-            }
-        )
-        plot1.append(
-            {
-                "name": "Loss of active material in positive electrode [%]",
-                "fname": "Positive",
-                "values": sol[
-                    "Loss of active material in positive electrode [%]"
-                ].entries.tolist(),
-            }
-        )
-        experiment_result1 = [{"title": "Loss of Active Material"}, {"graphs": plot1}]
-
-        # Plot 2
-        plot2 = []
-        plot2.append({"name": "Time [h]", "values": sol["Time [h]"].entries.tolist()})
-        plot2.append(
-            {
-                "name": "Loss of capacity to positive SEI [A.h]",
-                "fname": "Positive_SEI",
-                "values": sol[
-                    "Loss of capacity to positive SEI [A.h]"
-                ].entries.tolist(),
-            }
-        )
-        plot2.append(
-            {
-                "name": "Loss of capacity to positive SEI on cracks [A.h]",
-                "fname": "Positive_SEI_Cracks",
-                "values": sol[
-                    "Loss of capacity to positive SEI on cracks [A.h]"
-                ].entries.tolist(),
-            }
-        )
-        plot2.append(
-            {
-                "name": "Loss of capacity to positive lithium plating [A.h]",
-                "fname": "Positive_Lithium_Plating",
-                "values": sol[
-                    "Loss of capacity to positive lithium plating [A.h]"
-                ].entries.tolist(),
-            }
-        )
-        experiment_result2 = [{"title": "Loss of Capacity"}, {"graphs": plot2}]
-
-        # Plot 3
-        plot3 = []
-        plot3.append({"name": "Time [h]", "values": sol["Time [h]"].entries.tolist()})
-        plot3.append(
-            {
-                "name": "Loss of lithium inventory [%]",
-                "fname": "Lithium_Inventory",
-                "values": sol["Loss of lithium inventory [%]"].entries.tolist(),
-            }
-        )
-        plot3.append(
-            {
-                "name": "Loss of lithium inventory, including electrolyte [%]",
-                "fname": "Lithium_Inventory_Electrolyte",
-                "values": sol[
-                    "Loss of lithium inventory, including electrolyte [%]"
-                ].entries.tolist(),
-            }
-        )
-        plot3.append(
-            {
-                "name": "Loss of lithium to positive SEI [mol]",
-                "fname": "Lithium_Positive_SEI",
-                "values": sol["Loss of lithium to positive SEI [mol]"].entries.tolist(),
-            }
-        )
-        plot3.append(
-            {
-                "name": "Loss of lithium to positive SEI on cracks [mol]",
-                "fname": "Lithium_Positive_SEI_Cracks",
-                "values": sol[
-                    "Loss of lithium to positive SEI on cracks [mol]"
-                ].entries.tolist(),
-            }
-        )
-        plot3.append(
-            {
-                "name": "Loss of lithium to positive lithium plating [mol]",
-                "fname": "Lithium_Positive_Lithium_Plating",
-                "values": sol[
-                    "Loss of lithium to positive lithium plating [mol]"
-                ].entries.tolist(),
-            }
-        )
-        experiment_result3 = [{"title": "Loss of Lithium"}, {"graphs": plot3}]
-
-        # Plot 4
-        plot4 = []
-        plot4.append({"name": "Time [h]", "values": sol["Time [h]"].entries.tolist()})
-        plot4.append(
-            {
-                "name": "Negative electrode capacity [A.h]",
-                "fname": "Negative_Capacity",
-                "values": sol["Negative electrode capacity [A.h]"].entries.tolist(),
-            }
-        )
-        plot4.append(
-            {
-                "name": "Positive electrode capacity [A.h]",
-                "fname": "Positive_Capacity",
-                "values": sol["Positive electrode capacity [A.h]"].entries.tolist(),
-            }
-        )
-        experiment_result4 = [
-            {"title": "Change in Electrode Capacity"},
-            {"graphs": plot4},
-        ]
+        
+        sol = sim.solve(calc_esoh=False, save_at_cycles=1)
+        print("Number of Cycles: ", len(sol.cycles))
+        print("Solution took: ", sol.solve_time)
 
         # Plot 5
         plot5 = []
@@ -265,16 +139,19 @@ def simulate_lab2(request):
                 ].entries.tolist(),
             }
         )
-        experiment_result5 = [{"title": "Total Lithium"}, {"graphs": plot5}]
-
+        
+        plots = {"Total lithium in positive electrode [mol]":"Positive", "Total lithium in negative electrode [mol]":"Negative", "Total lithium [mol]":"Total"}
+        experiment_result1 = [{"title": "Total Lithium in electrodes"}, {"graphs": utils.plot_graphs_against_cycle(sol, 3, plots)}]
+        
+        
+        
+        
+        experiment_result2 = [{"title": "Capacity over Cycles"}]
+        experiment_result2.append({"graphs": utils.plot_against_cycle(sol, cycles, "Discharge capacity [A.h]", "Capacity")})
         final_result = [
             experiment_result1,
             experiment_result2,
-            experiment_result3,
-            experiment_result4,
-            experiment_result5,
         ]
-        print("Request Answered: ", final_result)
         return jsonify(final_result)
 
     except Exception as e:

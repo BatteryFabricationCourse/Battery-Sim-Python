@@ -1,5 +1,6 @@
 Flask
+casadi==3.6.3
 pybamm
 flask-cors
 flask_limiter
-numpy
+numpy<2

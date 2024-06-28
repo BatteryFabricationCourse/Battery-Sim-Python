@@ -4,31 +4,71 @@ from scipy.interpolate import PchipInterpolator
 
 
 def interpolate_array(input_array, output_size):
-    """
-    Interpolates the values in the input array to generate an output array of the specified size.
-
-    Parameters:
-    input_array (list or numpy array): The array of numbers to interpolate.
-    output_size (int): The size of the output array.
-
-    Returns:
-    numpy array: The interpolated array of the specified size.
-    """
     input_array = np.array(input_array)
     input_size = len(input_array)
     
-    # Create the indices for the input and output arrays
+    
     input_indices = np.arange(input_size)
     output_indices = np.linspace(0, input_size - 1, output_size)
     
-    # Create the PCHIP interpolation function
+    
     pchip_interp_func = PchipInterpolator(input_indices, input_array)
     
-    # Interpolate the values
+    
     output_array = pchip_interp_func(output_indices)
     
     return output_array.tolist()
 
+
+
+def plot_against_cycle(solution, number_of_cycles, variable_name, func_name = ""):
+        function = []
+        graphs = []
+        for cycle in solution.cycles:
+            
+            function += cycle[variable_name].entries.tolist()
+            print(len(function))
+        
+        
+        cycles_array = np.linspace(0, number_of_cycles, len(function))
+        graphs.append(
+            {
+                "name": "Cycle",
+                "values": cycles_array.tolist(),
+            }
+        )
+        graphs.append(
+            {
+                "name": variable_name,
+                "fname": func_name,
+                "values": function,
+            }
+        )
+        
+        return graphs
+    
+def plot_graphs_against_cycle(solution, number_of_cycles, variables):
+        graphs = []
+        for variable_name in variables:
+            function = []
+            for cycle in solution.cycles:
+                function += cycle[variable_name].entries.tolist()
+            cycles_array = np.linspace(0, number_of_cycles, len(function))
+            graphs.append(
+                {
+                    "name": "Cycle",
+                    "values": cycles_array.tolist(),
+                }
+            )
+            graphs.append(
+                {
+                    "name": variable_name,
+                    "fname": variables[variable_name],
+                    "values": function,
+                }
+            )
+            
+        return graphs
 
 def update_parameters(
     parameters, temperature, capacity, PosElectrodeThickness, silicon_percent

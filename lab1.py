@@ -32,7 +32,7 @@ def simulate_lab1(request):
         parameters = pybamm.ParameterValues(batteries[battery_type])
         update_parameters(parameters, temperature, capacity, None, None)
 
-        solver = pybamm.CasadiSolver("safe")
+        solver = pybamm.CasadiSolver("fast")
         model = pybamm.lithium_ion.SPM()
         
         parameters.set_initial_stoichiometries(1);
@@ -63,6 +63,7 @@ def simulate_lab1(request):
         model = pybamm.lithium_ion.SPM()
         sim = pybamm.Simulation(model, parameter_values=parameters, experiment=experiment)
         print("Running simulation Cycling\n")
+        solver = pybamm.CasadiSolver("safe")
         sol = sim.solve(solver=solver)
 
         experiment_result = [{"title": "Cycling"}]

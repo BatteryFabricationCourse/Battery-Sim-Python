@@ -2,14 +2,8 @@ from flask import jsonify
 import pybamm
 import numpy
 from scipy.ndimage import interpolation
-from utils import (
-    update_parameters,
-    run_charging_experiments,
-    run_cycling_experiment,
-    interpolate_array,
-)
+import utils
 
-model = pybamm.lithium_ion.SPMe()
 batteries = {
     "NMC": "Mohtat2020",
     "NCA": "NCA_Kim2011",
@@ -37,14 +31,14 @@ def simulate_lab3(request):
         rest2_minutes = charging_properties.get("Rest 2T", 1)
         cycles = charging_properties.get("Cycles", 1)
 
-        if cycles > 100:
-            cycles = 100
+        if cycles > 50:
+            cycles = 50
 
         if battery_type not in batteries:
             return jsonify({"error": "Unsupported chemistry"}), 400
 
         parameters = pybamm.ParameterValues(batteries[battery_type])
-        update_parameters(parameters, temperature, None, None, None)
+        utils.update_parameters(parameters, temperature, None, None, None)
 
         final_result = []
         graphs = []
@@ -60,6 +54,12 @@ def simulate_lab3(request):
             ]
             * cycles
         )
+        model = model = pybamm.lithium_ion.SPM()
+        if battery_type != "LFP":
+            model = pybamm.lithium_ion.SPM({"SEI": "ec reaction limited"})
+            parameters.update({"SEI kinetic rate constant [m.s-1]": 1e-14})
+        
+        
         sim = pybamm.Simulation(
             model, parameter_values=parameters, experiment=experiment
         )
@@ -86,57 +86,11 @@ def simulate_lab3(request):
         experiment_result.append({"graphs": graphs})
         final_result.append(experiment_result)
 
-        graphs = []
-
-        voltage = []
-        
-        for cycle in sol.cycles:
-            voltage += interpolate_array(cycle["Voltage [V]"].entries, int(5000 / cycles))
-        
-        
-        cycles_for_voltage_plot = numpy.linspace(0, cycles, len(voltage))
-        print(len(voltage))
-        print(len(cycles_for_voltage_plot))
         experiment_result = [{"title": "Voltage over Cycles"}]
-        graphs.append(
-            {
-                "name": "Cycle",
-                "values": cycles_for_voltage_plot.tolist(),
-            }
-        )
-        graphs.append(
-            {
-                "name": "Terminal Voltage [V]",
-                "fname": "Voltage",
-                "values": voltage,
-            }
-        )
-        experiment_result.append({"graphs": graphs})
+        
+        experiment_result.append({"graphs": utils.plot_against_cycle(sol, cycles, "Voltage [V]", "Voltage")})
         final_result.append(experiment_result)
 
-        #graphs = []
-
-        #experiment_result = [{"title": "Loss"}]
-
-        #graphs.append(
-        #    {
-        #        "name": "Cycle",
-        #        "values": sol.summary_variables["Cycle number"].tolist(),
-        #    }
-        #)
-        #graphs.append(
-        #    {
-        #        "name": "Capacity [A.h]",
-        #        "fname": "Capacity",
-        #        "values": sol.summary_variables[
-        #            "Change in negative electrode capacity [A.h]"
-        #        ].tolist(),
-        #    }
-        #)
-        #experiment_result.append({"graphs": graphs})
-        #final_result.append(experiment_result)
-
-        #print("Request Answered: ", final_result)
         return jsonify(final_result)
 
     except Exception as e:
