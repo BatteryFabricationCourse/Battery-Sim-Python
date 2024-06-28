@@ -86,10 +86,6 @@ def simulate_lab1(request):
         experiment_result.append({"graphs": graphs})
         
         final_result.append(experiment_result)
-
-        print("Request Answered: ", final_result)
-        with open('lastResponse.json', 'w', encoding='utf-8') as f:
-            f.write(str(final_result))
         return jsonify(final_result)
 
     except Exception as e:
