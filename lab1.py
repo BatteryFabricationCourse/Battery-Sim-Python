@@ -52,9 +52,8 @@ def simulate_lab1(request):
         experiment = pybamm.Experiment(
             [
                 (f"Discharge at 10C until 2V",
-        "Rest for 1 minute",
                 f"Charge at 10C until 4V",
-            f"Hold at 4.2V until C/50"
+                f"Hold at 4.2V until C/50"
     )
             ]
             * cycles

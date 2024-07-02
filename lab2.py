@@ -42,10 +42,8 @@ def simulate_lab2(request):
         [
             (
                 s("Discharge at 1 C for 10 hours or until 3.0 V", period="1 hour"),
-                s("Rest for 30 minutes", period="30 minutes"),
                 s("Charge at 1 C until 4.1 V", period="30 minutes"),
                 s("Hold at 4.1 V until 50 mA", period="30 minutes"),
-                s("Rest for 30 minutes", period="30 minutes"),
             )
         ]
         * cycles,
@@ -63,91 +61,10 @@ def simulate_lab2(request):
         print("Number of Cycles: ", len(sol.cycles))
         print("Solution took: ", sol.solve_time)
 
-        # Plot 5
-        plot5 = []
-        plot5.append({"name": "Time [h]", "values": sol["Time [h]"].entries.tolist()})
-        plot5.append(
-            {
-                "name": "Total lithium [mol]",
-                "fname": "Total_Lithium",
-                "values": sol["Total lithium [mol]"].entries.tolist(),
-            }
-        )
-        plot5.append(
-            {
-                "name": "Total lithium in electrolyte [mol]",
-                "fname": "Total_Lithium_Electrolyte",
-                "values": sol["Total lithium in electrolyte [mol]"].entries.tolist(),
-            }
-        )
-        plot5.append(
-            {
-                "name": "Total lithium in negative electrode [mol]",
-                "fname": "Total_Lithium_Negative",
-                "values": sol[
-                    "Total lithium in negative electrode [mol]"
-                ].entries.tolist(),
-            }
-        )
-        plot5.append(
-            {
-                "name": "Total lithium in particles [mol]",
-                "fname": "Total_Lithium_Particles",
-                "values": sol["Total lithium in particles [mol]"].entries.tolist(),
-            }
-        )
-        plot5.append(
-            {
-                "name": "Total lithium in positive electrode [mol]",
-                "fname": "Total_Lithium_Positive",
-                "values": sol[
-                    "Total lithium in positive electrode [mol]"
-                ].entries.tolist(),
-            }
-        )
-        plot5.append(
-            {
-                "name": "Total lithium lost [mol]",
-                "fname": "Total_Lithium_Lost",
-                "values": sol["Total lithium lost [mol]"].entries.tolist(),
-            }
-        )
-        plot5.append(
-            {
-                "name": "Total lithium lost from electrolyte [mol]",
-                "fname": "Total_Lithium_Lost_Electrolyte",
-                "values": sol[
-                    "Total lithium lost from electrolyte [mol]"
-                ].entries.tolist(),
-            }
-        )
-        plot5.append(
-            {
-                "name": "Total lithium lost from particles [mol]",
-                "fname": "Total_Lithium_Lost_Particles",
-                "values": sol[
-                    "Total lithium lost from particles [mol]"
-                ].entries.tolist(),
-            }
-        )
-        plot5.append(
-            {
-                "name": "Total lithium lost to side reactions [mol]",
-                "fname": "Total_Lithium_Lost_Side_Reactions",
-                "values": sol[
-                    "Total lithium lost to side reactions [mol]"
-                ].entries.tolist(),
-            }
-        )
-        
         plots = {"Total lithium in positive electrode [mol]":"Positive", "Total lithium in negative electrode [mol]":"Negative", "Total lithium [mol]":"Total"}
         experiment_result1 = [{"title": "Total Lithium in electrodes"}, {"graphs": utils.plot_graphs_against_cycle(sol, 3, plots)}]
-        
-        
-        
-        
         experiment_result2 = [{"title": "Capacity over Cycles"}]
-        experiment_result2.append({"graphs": utils.plot_against_cycle(sol, cycles, "Discharge capacity [A.h]", "Capacity")})
+        experiment_result2.append({"graphs": utils.plot_against_cycle(sol, cycles, "Throughput capacity [A.h]", "Capacity")})
         final_result = [
             experiment_result1,
             experiment_result2,

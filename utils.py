@@ -19,16 +19,21 @@ def interpolate_array(input_array, output_size):
     
     return output_array.tolist()
 
+def remove_every_other_from_array(list):
+    return list[::2]
 
 
 def plot_against_cycle(solution, number_of_cycles, variable_name, func_name = ""):
         function = []
         graphs = []
         for cycle in solution.cycles:
-            
             function += cycle[variable_name].entries.tolist()
-            print(len(function))
         
+        print("Number of Samples: ", len(function))
+        if len(function) > 8100:
+            function = interpolate_array(function, 8100)
+        #while len(function) > 7000:
+            #print("Number of Samples after cutting: ", len(function))
         
         cycles_array = np.linspace(0, number_of_cycles, len(function))
         graphs.append(
@@ -97,19 +102,19 @@ def run_charging_experiments(c_rates, mode, model, parameters, solver):
     experiment_result = [{"title": f"{mode.capitalize()[:-1]}ing at different C Rates"}]
     graphs = []
     model = pybamm.lithium_ion.SPM()
-    solver = pybamm.CasadiSolver()
+    solver = pybamm.CasadiSolver("fast")
     y_axis_label = None
     for c_rate in c_rates:
         #c_rate = c_rate + 0.01
         if mode == "Charge":
             experiment = pybamm.Experiment(
-                [f"Charge at {c_rate}C for 3 hours or until 4.3 V"]
+                [f"Charge at {c_rate}C for 100 hours or until 4.0 V"]
             )
             initial_soc = 0
             y_axis_label = "Throughput capacity [A.h]"
         else:
             experiment = pybamm.Experiment(
-                [f"Discharge at {c_rate}C for 3 hours or until 2.0 V"]
+                [f"Discharge at {c_rate}C for 100 hours or until 2.2 V"]
             )
             initial_soc = 1
             y_axis_label = "Discharge capacity [A.h]"
@@ -143,9 +148,7 @@ def run_cycling_experiment(cycles, model, parameters):
             (
                 "Charge at 1 C until 4.0 V",
                 "Hold at 4.0 V until C/10",
-                "Rest for 5 minutes",
                 "Discharge at 1 C until 2.2 V",
-                "Rest for 5 minutes",
             )
         ]
         * cycles
