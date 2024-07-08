@@ -4,7 +4,7 @@ import numpy as np
 from scipy.ndimage import interpolation
 import utils
 
-batteries = {
+batteries:dict = {
     "NMC": "Mohtat2020",
     "NCA": "NCA_Kim2011",
     "LFP": "Prada2013",
@@ -17,21 +17,22 @@ batteries = {
 def simulate_lab3(request):
     try:
         print("New Request: ", request.json)
-        data = request.json
-        battery_type = data.get("Type")
-        temperature = data.get("Ambient temperature [K]")
+        data:dict = request.json
+        battery_type:str = data.get("Type")
+        temperature:float = data.get("Ambient temperature [K]")
 
-        charging_properties = data.get("Charging Properties")
-        charge_current = charging_properties.get("Charge C", 1)
-        charge_voltage = charging_properties.get("Charge V", 1)
-        hold_voltage = charging_properties.get("Hold V", 1)
-        hold_current = charging_properties.get("Hold C", 1)
-        rest1_minutes = charging_properties.get("Rest T", 1)
-        discharge_current = charging_properties.get("Discharge C", 1)
-        discharge_voltage = charging_properties.get("Discharge V", 1)
-        rest2_minutes = charging_properties.get("Rest 2T", 1)
-        cycles = charging_properties.get("Cycles", 1)
-
+        charging_properties:dict = data.get("Charging Properties")
+        charge_current:float = charging_properties.get("Charge C", 1)
+        charge_voltage:float = charging_properties.get("Charge V", 1)
+        hold_voltage:float = charging_properties.get("Hold V", 1)
+        hold_current :float= charging_properties.get("Hold C", 1)
+        rest1_minutes :float= charging_properties.get("Rest T", 1)
+        discharge_current :float= charging_properties.get("Discharge C", 1)
+        discharge_voltage :float= charging_properties.get("Discharge V", 1)
+        rest2_minutes :float= charging_properties.get("Rest 2T", 1)
+        cycles :float= charging_properties.get("Cycles", 1)
+        
+        
         if cycles > 50:
             cycles = 50
 
