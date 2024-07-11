@@ -20,7 +20,7 @@ def simulate_lab1(request):
         if battery_type not in utils.batteries:
             return jsonify({"error": "Unsupported chemistry"}), 400
 
-        parameters = utils.get_battery_parameters(battery_type)
+        parameters = utils.get_battery_parameters(battery_type, degradation_enabled=False)
         utils.update_parameters(parameters, temperature, capacity, None, None)
 
         solver = pybamm.CasadiSolver("fast")
@@ -40,7 +40,7 @@ def simulate_lab1(request):
         
         
         #Cycling
-        parameters = utils.get_battery_parameters(battery_type, True)
+        parameters = utils.get_battery_parameters(battery_type,  degradation_enabled=True)
         experiment = pybamm.Experiment(
             [
                 (f"Discharge at 1C until 2V",

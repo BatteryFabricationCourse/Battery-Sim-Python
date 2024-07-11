@@ -28,7 +28,7 @@ def simulate_lab3(request):
         if battery_type not in utils.batteries:
             return jsonify({"error": "Unsupported chemistry"}), 400
         
-        parameters = utils.get_battery_parameters(battery_type, True)
+        parameters = utils.get_battery_parameters(battery_type, degradation_enabled=True)
         
         
         if cycles > 50:
