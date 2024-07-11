@@ -2,6 +2,14 @@ import pybamm
 import numpy as np
 from scipy.interpolate import PchipInterpolator
 
+batteries:dict = {
+    "NMC": "Mohtat2020",
+    "NCA": "NCA_Kim2011",
+    "LFP": "Prada2013",
+    "LG M50": "OKane2022",
+    "Silicon": "Chen2020_composite",
+    "LFPBackup": "Ecker2015",
+}
 
 def interpolate_array(input_array, output_size):
     input_array = np.array(input_array)
@@ -22,6 +30,17 @@ def interpolate_array(input_array, output_size):
 def remove_every_other_from_array(list):
     return list[::2]
 
+def get_battery_parameters(battery_type, degradation_enabled=False):
+    parameters = pybamm.ParameterValues(batteries[battery_type])
+    
+    if degradation_enabled:
+        parameters.update({"SEI kinetic rate constant [m.s-1]": 1e-14}, check_already_exists=False)
+        if battery_type == "LFP":
+            parameters = pybamm.ParameterValues(batteries["NMC"])
+            lfp_parameters = pybamm.ParameterValues(batteries["LFP"])
+            parameters.update(lfp_parameters, check_already_exists=False)
+        
+    return parameters
 
 def plot_against_cycle(solution, number_of_cycles, variable_name, func_name = ""):
         function = []

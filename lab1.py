@@ -1,16 +1,7 @@
 from flask import jsonify
 import pybamm
-from utils import update_parameters, run_charging_experiments, run_cycling_experiment
+import utils
 import numpy
-
-batteries = {
-    "NMC": "Mohtat2020",
-    "NCA": "NCA_Kim2011",
-    "LFP": "Prada2013",
-    "LG M50": "OKane2022",
-    "Silicon": "Chen2020_composite",
-}
-
 
 def simulate_lab1(request):
     try:
@@ -26,11 +17,11 @@ def simulate_lab1(request):
         if cycles > 100:
             cycles = 100
 
-        if battery_type not in batteries:
+        if battery_type not in utils.batteries:
             return jsonify({"error": "Unsupported chemistry"}), 400
 
-        parameters = pybamm.ParameterValues(batteries[battery_type])
-        update_parameters(parameters, temperature, capacity, None, None)
+        parameters = utils.get_battery_parameters(battery_type)
+        utils.update_parameters(parameters, temperature, capacity, None, None)
 
         solver = pybamm.CasadiSolver("fast")
         model = pybamm.lithium_ion.SPM()
@@ -38,10 +29,10 @@ def simulate_lab1(request):
         parameters.set_initial_stoichiometries(1);
         final_result = []
         final_result.append(
-            run_charging_experiments(c_rates, "Charge", model, parameters, solver)
+            utils.run_charging_experiments(c_rates, "Charge", model, parameters, solver)
         )
         final_result.append(
-            run_charging_experiments(
+            utils.run_charging_experiments(
                 c_rates, "Discharge", model, parameters, solver
             )
         )
@@ -49,17 +40,18 @@ def simulate_lab1(request):
         
         
         #Cycling
+        parameters = utils.get_battery_parameters(battery_type, True)
         experiment = pybamm.Experiment(
             [
-                (f"Discharge at 10C until 2V",
-                f"Charge at 10C until 4V",
+                (f"Discharge at 1C until 2V",
+                f"Charge at 1C until 4V",
                 f"Hold at 4.2V until C/50"
     )
             ]
             * cycles
         )
         
-        model = pybamm.lithium_ion.SPM()
+        model = pybamm.lithium_ion.SPM({"SEI": "ec reaction limited"})
         sim = pybamm.Simulation(model, parameter_values=parameters, experiment=experiment)
         print("Running simulation Cycling\n")
         solver = pybamm.CasadiSolver("safe")

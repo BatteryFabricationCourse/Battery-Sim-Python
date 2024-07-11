@@ -7,11 +7,11 @@ import utils
 def simulate_lab2(request):
     try:
         print("New Request: ", request.json)
-        data = request.json
-        temperature = data.get("Ambient temperature [K]")
-        c_rates = data.get("C Rates", [1])
-        cycles= 3
-        silicon_percent = data.get("Silicon Percentage")
+        data:dict = request.json
+        temperature:float = data.get("Ambient temperature [K]")
+        c_rate:float = data.get("C Rates", [1])[0]
+        cycles:int = 3
+        silicon_percent:float = data.get("Silicon Percentage")
 
         model = pybamm.lithium_ion.DFN(
             {
@@ -41,9 +41,9 @@ def simulate_lab2(request):
         cycling_experiment = pybamm.Experiment(
         [
             (
-                s("Discharge at 1 C for 10 hours or until 3.0 V", period="1 hour"),
-                s("Charge at 1 C until 4.1 V", period="30 minutes"),
-                s("Hold at 4.1 V until 50 mA", period="30 minutes"),
+                s(f"Discharge at {c_rate} C for 10 hours or until 3.0 V", period="1 hour"),
+                s(f"Charge at {c_rate} C until 4.1 V", period="30 minutes"),
+                s(f"Hold at 4.1 V until 50 mA", period="30 minutes"),
             )
         ]
         * cycles,

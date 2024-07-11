@@ -4,14 +4,7 @@ import numpy as np
 from scipy.ndimage import interpolation
 import utils
 
-batteries:dict = {
-    "NMC": "Mohtat2020",
-    "NCA": "NCA_Kim2011",
-    "LFP": "Prada2013",
-    "LG M50": "OKane2022",
-    "Silicon": "Chen2020_composite",
-    "LFPBackup": "Ecker2015",
-}
+
 
 
 def simulate_lab3(request):
@@ -32,17 +25,20 @@ def simulate_lab3(request):
         rest2_minutes :float= charging_properties.get("Rest 2T", 1)
         cycles :float= charging_properties.get("Cycles", 1)
         
+        if battery_type not in utils.batteries:
+            return jsonify({"error": "Unsupported chemistry"}), 400
+        
+        parameters = utils.get_battery_parameters(battery_type, True)
+        
         
         if cycles > 50:
             cycles = 50
 
-        if battery_type == "LFP":
-            battery_type = "LFPBackup"
-        if battery_type not in batteries:
-            return jsonify({"error": "Unsupported chemistry"}), 400
-
-        parameters = pybamm.ParameterValues(batteries[battery_type])
+        
+        
         utils.update_parameters(parameters, temperature, None, None, None)
+
+        model = pybamm.lithium_ion.SPM({"SEI": "ec reaction limited"})
 
         final_result = []
         graphs = []
@@ -58,14 +54,9 @@ def simulate_lab3(request):
             ]
             * cycles
         )
-        model = None
-        if battery_type == "LFP":
-            #enable_LFP_degradation(parameters)
-            model = pybamm.lithium_ion.SPM()
-        else:
-            model = pybamm.lithium_ion.SPM({"SEI": "ec reaction limited"})
-            parameters.update({"SEI kinetic rate constant [m.s-1]": 1e-14}, check_already_exists=False)
-            pass
+        
+        
+            
         
         
         sim = pybamm.Simulation(
