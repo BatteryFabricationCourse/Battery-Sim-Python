@@ -2,7 +2,7 @@ import pybamm
 import numpy as np
 from scipy.interpolate import PchipInterpolator
 
-batteries:dict = {
+batteries: dict = {
     "NMC": "Mohtat2020",
     "NCA": "NCA_Kim2011",
     "LFP": "Prada2013",
@@ -11,49 +11,86 @@ batteries:dict = {
     "LFPBackup": "Ecker2015",
 }
 
+
 def interpolate_array(input_array, output_size):
     input_array = np.array(input_array)
     input_size = len(input_array)
-    
-    
+
     input_indices = np.arange(input_size)
     output_indices = np.linspace(0, input_size - 1, output_size)
-    
-    
+
     pchip_interp_func = PchipInterpolator(input_indices, input_array)
-    
-    
+
     output_array = pchip_interp_func(output_indices)
-    
+
     return output_array.tolist()
+
 
 def remove_every_other_from_array(list):
     return list[::2]
 
+
 def get_battery_parameters(battery_type, degradation_enabled=False):
     parameters = pybamm.ParameterValues(batteries[battery_type])
-    
+
     if degradation_enabled:
-        parameters.update({"SEI kinetic rate constant [m.s-1]": 1e-14}, check_already_exists=False)
-        if battery_type == "LFP":
+        if battery_type == "NCA":
+            parameters.update(
+                {"SEI kinetic rate constant [m.s-1]": 1e-14}, check_already_exists=False
+            )
+        elif battery_type == "NMC":
+            parameters.update(
+                {"SEI kinetic rate constant [m.s-1]": 1e-16},
+                check_already_exists=False,
+            )
+        elif battery_type == "LFP":
+            parameters.update(
+                {"SEI kinetic rate constant [m.s-1]": 5e-18},
+                check_already_exists=False,
+            )
             parameters = pybamm.ParameterValues(batteries["NMC"])
             lfp_parameters = pybamm.ParameterValues(batteries["LFP"])
             parameters.update(lfp_parameters, check_already_exists=False)
-        
+
     return parameters
 
-def plot_against_cycle(solution, number_of_cycles, variable_name, func_name = ""):
+
+def plot_against_cycle(solution, number_of_cycles, variable_name, func_name=""):
+    function = []
+    graphs = []
+    for cycle in solution.cycles:
+        function += cycle[variable_name].entries.tolist()
+
+    print("Number of Samples: ", len(function))
+    if len(function) > 8100:
+        function = interpolate_array(function, 8100)
+    # while len(function) > 7000:
+    # print("Number of Samples after cutting: ", len(function))
+
+    cycles_array = np.linspace(0, number_of_cycles, len(function))
+    graphs.append(
+        {
+            "name": "Cycle",
+            "values": cycles_array.tolist(),
+        }
+    )
+    graphs.append(
+        {
+            "name": variable_name,
+            "fname": func_name,
+            "values": function,
+        }
+    )
+
+    return graphs
+
+
+def plot_graphs_against_cycle(solution, number_of_cycles, variables):
+    graphs = []
+    for variable_name in variables:
         function = []
-        graphs = []
         for cycle in solution.cycles:
             function += cycle[variable_name].entries.tolist()
-        
-        print("Number of Samples: ", len(function))
-        if len(function) > 8100:
-            function = interpolate_array(function, 8100)
-        #while len(function) > 7000:
-            #print("Number of Samples after cutting: ", len(function))
-        
         cycles_array = np.linspace(0, number_of_cycles, len(function))
         graphs.append(
             {
@@ -64,35 +101,13 @@ def plot_against_cycle(solution, number_of_cycles, variable_name, func_name = ""
         graphs.append(
             {
                 "name": variable_name,
-                "fname": func_name,
+                "fname": variables[variable_name],
                 "values": function,
             }
         )
-        
-        return graphs
-    
-def plot_graphs_against_cycle(solution, number_of_cycles, variables):
-        graphs = []
-        for variable_name in variables:
-            function = []
-            for cycle in solution.cycles:
-                function += cycle[variable_name].entries.tolist()
-            cycles_array = np.linspace(0, number_of_cycles, len(function))
-            graphs.append(
-                {
-                    "name": "Cycle",
-                    "values": cycles_array.tolist(),
-                }
-            )
-            graphs.append(
-                {
-                    "name": variable_name,
-                    "fname": variables[variable_name],
-                    "values": function,
-                }
-            )
-            
-        return graphs
+
+    return graphs
+
 
 def update_parameters(
     parameters, temperature, capacity, PosElectrodeThickness, silicon_percent
@@ -124,20 +139,20 @@ def run_charging_experiments(c_rates, mode, model, parameters, solver):
     solver = pybamm.CasadiSolver("fast")
     y_axis_label = None
     for c_rate in c_rates:
-        #c_rate = c_rate + 0.01
+        # c_rate = c_rate + 0.01
         if mode == "Charge":
             experiment = pybamm.Experiment(
-                [f"Charge at {c_rate}C for 100 hours or until 4.0 V"]
+                [f"Charge at {c_rate + 0.01}C for 100 hours or until 4.0 V"]
             )
             initial_soc = 0
             y_axis_label = "Throughput capacity [A.h]"
         else:
             experiment = pybamm.Experiment(
-                [f"Discharge at {c_rate}C for 100 hours or until 2.2 V"]
+                [f"Discharge at {c_rate+ 0.01}C for 100 hours or until 2.2 V"]
             )
             initial_soc = 1
             y_axis_label = "Discharge capacity [A.h]"
-        
+
         print(f"Running simulation C Rate: {c_rate} {mode.lower()[:-1]}ing\n")
 
         sim = pybamm.Simulation(
@@ -195,16 +210,14 @@ def run_cycling_experiment(cycles, model, parameters):
     experiment_result2 = []
     experiment_result2.append({"title": "Temperature"})
     graphs = []
+    graphs.append({"name": "Time [s]", "values": sol["Time [s]"].entries.tolist()})
     graphs.append(
-            {"name": "Time [s]", "values": sol["Time [s]"].entries.tolist()}
-        )
-    graphs.append(
-            {
-                "name": "Cell Temperature [C]",
-                "fname": f"C",
-                "values": sol["Cell temperature [C]"].entries.tolist(),
-            }
-        )
-    
+        {
+            "name": "Cell Temperature [C]",
+            "fname": f"C",
+            "values": sol["Cell temperature [C]"].entries.tolist(),
+        }
+    )
+
     experiment_result2.append({"graphs": graphs})
     return [experiment_result, experiment_result2]
