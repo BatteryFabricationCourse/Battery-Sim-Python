@@ -17,7 +17,8 @@ def simulate_lab2(request):
             {
                 "particle phases": ("2", "1"),
                 "open-circuit potential": (("single", "current sigmoid"), "single"),
-                "SEI": "solvent-diffusion limited"
+                "SEI": "solvent-diffusion limited",
+            "SEI": "ec reaction limited"
             }
         )
 
@@ -41,9 +42,9 @@ def simulate_lab2(request):
         cycling_experiment = pybamm.Experiment(
         [
             (
-                s(f"Discharge at {c_rate} C for 10 hours or until 3.0 V", period="1 hour"),
-                s(f"Charge at {c_rate} C until 4.1 V", period="30 minutes"),
-                s(f"Hold at 4.1 V until 50 mA", period="30 minutes"),
+                s(f"Discharge at {c_rate} C for 10 hours or until 2.5 V", period="1 hour"),
+                s(f"Charge at {c_rate} C until 4.3 V", period="30 minutes"),
+                #s(f"Hold at 4.1 V until 50 mA", period="30 minutes"),
             )
         ]
         * cycles,
@@ -61,16 +62,28 @@ def simulate_lab2(request):
         print("Number of Cycles: ", len(sol.cycles))
         print("Solution took: ", sol.solve_time)
 
-        plots = {"Total lithium in positive electrode [mol]":"Positive", "Total lithium in negative electrode [mol]":"Negative", "Total lithium [mol]":"Total"}
-        experiment_result1 = [{"title": "Total Lithium in electrodes"}, {"graphs": utils.plot_graphs_against_cycle(sol, 3, plots)}]
+        plots = {"Total lithium in positive electrode [mol]":"Positive", "Total lithium in negative electrode [mol]":"Negative", "Total lithium [mol]":"Total",
+}
+        experiment_result1 = [{"title": "Total Lithium in electrodes"}, {"graphs": utils.plot_graphs_against_cycle(sol, cycles, plots)}]
         experiment_result2 = [{"title": "Capacity over Cycles"}]
-        experiment_result2.append({"graphs": utils.plot_against_cycle(sol, cycles, "Throughput capacity [A.h]", "Capacity")})
+        experiment_result2.append({"graphs": utils.plot_against_cycle(sol, cycles, "Discharge capacity [A.h]", "Capacity")})
+        
+        experiment_result3 = [{"title": "Total Lithium in electrodes"}, {"graphs": utils.plot_graphs_against_cycle(sol, cycles, {'Loss of capacity to negative SEI [A.h]':"neg"})}]
+        
+        experiment_result4 = [{"title": "Total Lithium in electrodes"}, {"graphs": utils.plot_graphs_against_cycle(sol, cycles, {
+                                                                                                                                  'Loss of lithium inventory [%]':"inv",
+ 'Loss of lithium inventory, including electrolyte [%]':"elec",
+                                                                                                                                 })}]
+        
         final_result = [
             experiment_result1,
             experiment_result2,
+            experiment_result3,
+            experiment_result4,
         ]
         return jsonify(final_result)
 
     except Exception as e:
         print(e)
         return jsonify(["ERROR: " + str(e)])
+

@@ -3,7 +3,7 @@ import pybamm
 import utils
 import numpy
 
-
+# Add c rates to Cycling
 def simulate_lab1(request):
     try:
         print("New Request: ", request.json)
