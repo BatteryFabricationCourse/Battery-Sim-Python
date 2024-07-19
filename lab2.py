@@ -7,18 +7,18 @@ import utils
 def simulate_lab2(request):
     try:
         print("New Request: ", request.json)
-        data:dict = request.json
-        temperature:float = data.get("Ambient temperature [K]")
-        c_rate:float = data.get("C Rates", [1])[0]
-        cycles:int = 3
-        silicon_percent:float = data.get("Silicon Percentage")
+        data: dict = request.json
+        temperature: float = data.get("Ambient temperature [K]")
+        c_rate: float = data.get("C Rates", [1])[0]
+        cycles: int = 3
+        silicon_percent: float = data.get("Silicon Percentage")
 
         model = pybamm.lithium_ion.DFN(
             {
                 "particle phases": ("2", "1"),
                 "open-circuit potential": (("single", "current sigmoid"), "single"),
                 "SEI": "solvent-diffusion limited",
-            "SEI": "ec reaction limited"
+                "SEI": "ec reaction limited",
             }
         )
 
@@ -36,19 +36,23 @@ def simulate_lab2(request):
         )
         utils.update_parameters(parameters, temperature, None, None, silicon_percent)
 
-
-        fast_solver = pybamm.CasadiSolver("safe", dt_max=3600, extra_options_setup={"max_num_steps": 1000})
+        fast_solver = pybamm.CasadiSolver(
+            "safe", dt_max=3600, extra_options_setup={"max_num_steps": 1000}
+        )
         s = pybamm.step.string
         cycling_experiment = pybamm.Experiment(
-        [
-            (
-                s(f"Discharge at {c_rate} C for 10 hours or until 2.5 V", period="1 hour"),
-                s(f"Charge at {c_rate} C until 4.3 V", period="30 minutes"),
-                #s(f"Hold at 4.1 V until 50 mA", period="30 minutes"),
-            )
-        ]
-        * cycles,
-    )
+            [
+                (
+                    s(
+                        f"Discharge at {c_rate} C for 10 hours or until 2.5 V",
+                        period="1 hour",
+                    ),
+                    s(f"Charge at {c_rate} C until 4.3 V", period="30 minutes"),
+                    # s(f"Hold at 4.1 V until 50 mA", period="30 minutes"),
+                )
+            ]
+            * cycles,
+        )
 
         print("Running experiment")
         sim = pybamm.Simulation(
@@ -57,33 +61,76 @@ def simulate_lab2(request):
             solver=fast_solver,
             experiment=cycling_experiment,
         )
-        
+
         sol = sim.solve(calc_esoh=False, save_at_cycles=1)
         print("Number of Cycles: ", len(sol.cycles))
         print("Solution took: ", sol.solve_time)
 
-        plots = {"Total lithium in positive electrode [mol]":"Positive", "Total lithium in negative electrode [mol]":"Negative", "Total lithium [mol]":"Total",
-}
-        experiment_result1 = [{"title": "Total Lithium in electrodes"}, {"graphs": utils.plot_graphs_against_cycle(sol, cycles, plots)}]
+        plots = {
+            "Total lithium in positive electrode [mol]": "Positive",
+            "Total lithium in negative electrode [mol]": "Negative",
+            "Total lithium [mol]": "Total",
+        }
+        experiment_result1 = [
+            {"title": "Total Lithium in electrodes"},
+            {"graphs": utils.plot_graphs_against_cycle(sol, cycles, plots)},
+        ]
         experiment_result2 = [{"title": "Capacity over Cycles"}]
-        experiment_result2.append({"graphs": utils.plot_against_cycle(sol, cycles, "Discharge capacity [A.h]", "Capacity")})
-        
-        experiment_result3 = [{"title": "Total Lithium in electrodes"}, {"graphs": utils.plot_graphs_against_cycle(sol, cycles, {'Loss of capacity to negative SEI [A.h]':"neg"})}]
-        
-        experiment_result4 = [{"title": "Total Lithium in electrodes"}, {"graphs": utils.plot_graphs_against_cycle(sol, cycles, {
-                                                                                                                                  'Loss of lithium inventory [%]':"inv",
- 'Loss of lithium inventory, including electrolyte [%]':"elec",
-                                                                                                                                 })}]
-        
+        experiment_result2.append(
+            {
+                "graphs": utils.plot_against_cycle(
+                    sol, cycles, "Discharge capacity [A.h]", "Capacity"
+                )
+            }
+        )
+
+        experiment_result3 = [
+            {"title": "loss of capacity to SEI"},
+            {
+                "graphs": utils.plot_graphs_against_cycle(
+                    sol,
+                    cycles,
+                    {"Loss of capacity to negative SEI [A.h]": "Negative"},
+                )
+            },
+        ]
+
+        experiment_result4 = [
+            {"title": "Loss of Lithium"},
+            {
+                "graphs": utils.plot_graphs_against_cycle(
+                    sol,
+                    cycles,
+                    {
+                        "Loss of lithium inventory [%]": "inv",
+                        "Loss of lithium inventory, including electrolyte [%]": "elec",
+                    },
+                )
+            },
+        ]
+
+        experiment_result5 = [
+            {"title": "Change in Electrode Capacity"},
+            {
+                "graphs": utils.plot_graphs_against_cycle(
+                    sol,
+                    cycles,
+                    {
+                        "X-averaged total heating [W.m-3]": "Neg",
+                    },
+                )
+            },
+        ]
+        print(experiment_result5)
         final_result = [
             experiment_result1,
             experiment_result2,
             experiment_result3,
             experiment_result4,
+            experiment_result5,
         ]
         return jsonify(final_result)
 
     except Exception as e:
         print(e)
         return jsonify(["ERROR: " + str(e)])
-

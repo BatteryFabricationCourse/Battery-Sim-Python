@@ -4,10 +4,11 @@ import numpy as np
 from scipy.ndimage import interpolation
 import utils
 
-# Add voltage limit for lfp 3.65, 2.5, NMC 4.2, 3, NCA, 4.3, 2.5
-# Keep hold at same voltage
-#Add Capacity Label
-# Charge and discharge against Capacity for 1st and last cycle
+# DONE Add voltage limit for lfp 3.65, 2.5, NMC 4.2, 3, NCA, 4.3, 2.5
+# DONE Keep hold at same voltage
+# DONE Add Capacity Label
+# DONE Charge and discharge against Capacity for 1st and last cycle
+
 
 def simulate_lab3(request):
     try:
@@ -86,6 +87,140 @@ def simulate_lab3(request):
         experiment_result.append(
             {"graphs": utils.plot_against_cycle(sol, cycles, "Voltage [V]", "Voltage")}
         )
+        final_result.append(experiment_result)
+
+        experiment_result = [{"title": "Charging in first and last cycle"}]
+
+        graphs = []
+        cycle1_charge, cycle1_discharge = utils.split_at_peak(
+            sol.cycles[0]["Voltage [V]"].entries.tolist()
+        )
+        cycle1_crg_cap = sol.cycles[0]["Throughput capacity [A.h]"].entries.tolist()[
+            : len(cycle1_charge)
+        ]
+        cycle1_dsc_cap = sol.cycles[0]["Throughput capacity [A.h]"].entries.tolist()[
+            len(cycle1_charge) + 1 :
+        ]
+
+        cycle2_charge, cycle2_discharge = utils.split_at_peak(
+            sol.cycles[len(sol.cycles) - 1]["Voltage [V]"].entries.tolist()
+        )
+        cycle2_crg_cap = sol.cycles[len(sol.cycles) - 1][
+            "Throughput capacity [A.h]"
+        ].entries.tolist()[: len(cycle2_charge)]
+
+        cycle2_dsc_cap = sol.cycles[len(sol.cycles) - 1][
+            "Throughput capacity [A.h]"
+        ].entries.tolist()[len(cycle2_charge) + 1 :]
+
+        graphs.append(
+            {
+                "name": "Throughput capacity [A.h]",
+                "values": cycle1_crg_cap,
+            }
+        )
+        graphs.append(
+            {
+                "name": "Voltage [V]",
+                "fname": f"First",
+                "values": cycle1_charge,
+            }
+        )
+
+        graphs.append(
+            {
+                "name": "Throughput capacity [A.h]",
+                "values": cycle2_crg_cap,
+            }
+        )
+        graphs.append(
+            {
+                "name": "Voltage [V]",
+                "fname": f"Last",
+                "values": cycle2_charge,
+            }
+        )
+        experiment_result.append({"graphs": graphs})
+
+        final_result.append(experiment_result)
+
+        experiment_result = [{"title": "discharge graphs"}]
+
+        graphs = []
+
+        graphs.append(
+            {
+                "name": "Throughput capacity [A.h]",
+                "values": cycle1_dsc_cap,
+            }
+        )
+        graphs.append(
+            {
+                "name": "Voltage [V]",
+                "fname": f"First",
+                "values": cycle1_discharge,
+            }
+        )
+
+        graphs.append(
+            {
+                "name": "Throughput capacity [A.h]",
+                "values": cycle2_dsc_cap,
+            }
+        )
+        graphs.append(
+            {
+                "name": "Voltage [V]",
+                "fname": f"Last",
+                "values": cycle2_discharge,
+            }
+        )
+        experiment_result.append({"graphs": graphs})
+
+        final_result.append(experiment_result)
+
+        experiment_result = [{"title": "Unmodified graphs"}]
+
+        graphs = []
+
+        print(len(cycle1_dsc_cap))
+        print(len(cycle1_discharge))
+        print(len(cycle2_dsc_cap))
+        print(len(cycle2_discharge))
+
+        graphs.append(
+            {
+                "name": "Throughput capacity [A.h]",
+                "values": sol.cycles[0]["Throughput capacity [A.h]"].entries.tolist(),
+            }
+        )
+        graphs.append(
+            {
+                "name": "Voltage [V]",
+                "fname": f"First",
+                "values": sol.cycles[0]["Voltage [V]"].entries.tolist(),
+            }
+        )
+
+        graphs.append(
+            {
+                "name": "Throughput capacity [A.h]",
+                "values": sol.cycles[len(sol.cycles) - 1][
+                    "Throughput capacity [A.h]"
+                ].entries.tolist(),
+            }
+        )
+        graphs.append(
+            {
+                "name": "Voltage [V]",
+                "fname": f"Last",
+                "values": sol.cycles[len(sol.cycles) - 1][
+                    "Voltage [V]"
+                ].entries.tolist(),
+            }
+        )
+        experiment_result.append({"graphs": graphs})
+
         final_result.append(experiment_result)
 
         return jsonify(final_result)

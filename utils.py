@@ -13,6 +13,16 @@ batteries: dict = {
 }
 
 
+# Add voltage limit for lfp 3.65, 2.5, NMC 4.2, 3, NCA, 4.3, 2.5
+def get_voltage_limits(battery_type):
+    if battery_type == "LFP":
+        return 2.5, 3.65
+    if battery_type == "NMC":
+        return 3, 4.2
+    if battery_type == "NCA":
+        return 2.5, 4.3
+
+
 # Interpolate array to given size
 def interpolate_array(input_array, output_size):
     input_array = np.array(input_array)
@@ -39,21 +49,21 @@ def get_battery_parameters(battery_type, degradation_enabled=False):
     # Lower the "SEI kinetic rate constant [m.s-1]" value to increase battery degradation rate. 1e-14 = 1x10^-14
     if degradation_enabled:
         if battery_type == "NCA":
-            #parameters.update(
+            # parameters.update(
             #    {"SEI kinetic rate constant [m.s-1]": 1e-14}, check_already_exists=False
-            #)'
+            # )'
             pass
         elif battery_type == "NMC":
-            #parameters.update(
+            # parameters.update(
             #    {"SEI kinetic rate constant [m.s-1]": 1e-15},
             #    check_already_exists=False,
-            #)
+            # )
             pass
         elif battery_type == "LFP":
-            #parameters.update(
+            # parameters.update(
             #    {"SEI kinetic rate constant [m.s-1]": 5e-18},
             #    check_already_exists=False,
-            #)
+            # )
             parameters = pybamm.ParameterValues(batteries["NMC"])
             lfp_parameters = pybamm.ParameterValues(batteries["LFP"])
             parameters.update(lfp_parameters, check_already_exists=False)
@@ -64,14 +74,13 @@ def get_battery_parameters(battery_type, degradation_enabled=False):
 # Returns graph dictionary ready to be sent to the front-end
 def plot_against_cycle(solution, number_of_cycles, variable_name, func_name=""):
     function = []
-    
+
     graphs = []
     for cycle in solution.cycles:
-       function += cycle[variable_name].entries.tolist()
-       print("Samples size: ", len(cycle[variable_name].entries.tolist()))
+        function += cycle[variable_name].entries.tolist()
 
     print("Number of Samples: ", len(function))
-    #while len(function) > 8100:
+    # while len(function) > 8100:
     #    function = remove_every_other_from_array(function)
 
     cycles_array = np.linspace(0, number_of_cycles, len(function))
@@ -90,6 +99,19 @@ def plot_against_cycle(solution, number_of_cycles, variable_name, func_name=""):
     )
 
     return graphs
+
+
+def split_at_peak(arr):
+    if len(arr) == 0:
+        return np.array([]), np.array(
+            []
+        )  # Return empty arrays if the input array is empty
+
+    peak_index = np.argmax(arr)  # Find the index of the peak value (maximum value)
+    left_part = arr[:peak_index]  # Elements to the left of the peak
+    right_part = arr[peak_index + 1 :]  # Elements to the right of the peak
+
+    return left_part, right_part
 
 
 # Returns graphs dictionary ready to be sent to the front-end
@@ -140,23 +162,24 @@ def update_parameters(
         )
 
 
-def run_charging_experiments(c_rates, mode, model, parameters, solver):
+def run_charging_experiments(battery_type, c_rates, mode, parameters):
     experiment_result = [{"title": f"{mode.capitalize()[:-1]}ing at different C Rates"}]
     graphs = []
     model = pybamm.lithium_ion.SPM()
     solver = pybamm.CasadiSolver("fast")
     y_axis_label = None
+    minV, maxV = get_voltage_limits(battery_type)
     for c_rate in c_rates:
-        #c_rate = c_rate + 0.01
+
         if mode == "Charge":
             experiment = pybamm.Experiment(
-                [f"Charge at {c_rate + 0.01}C for 100 hours or until 4.0 V"]
+                [f"Charge at {c_rate + 0.01}C for 100 hours or until {maxV} V"]
             )
             initial_soc = 0
             y_axis_label = "Throughput capacity [A.h]"
         else:
             experiment = pybamm.Experiment(
-                [f"Discharge at {c_rate+ 0.01}C for 100 hours or until 2.2 V"]
+                [f"Discharge at {c_rate+ 0.01}C for 100 hours or until {minV} V"]
             )
             initial_soc = 1
             y_axis_label = "Discharge capacity [A.h]"
@@ -180,53 +203,3 @@ def run_charging_experiments(c_rates, mode, model, parameters, solver):
 
     experiment_result.append({"graphs": graphs})
     return experiment_result
-
-
-def run_cycling_experiment(cycles, model, parameters, c_rates):
-    for c_rate in c_rates:
-        experiment_result = [{"title": "Cycling"}]
-        graphs = []
-        experiment = pybamm.Experiment(
-            [
-                (
-                    "Charge at 1 C until 4.0 V",
-                    "Hold at 4.0 V until C/10",
-                    "Discharge at 1 C until 2.2 V",
-                )
-            ]
-            * cycles
-        )
-        sim = pybamm.Simulation(model, parameter_values=parameters, experiment=experiment)
-        print("Running simulation Cycling\n")
-        solver = pybamm.CasadiSolver("fast", dt_max=100000)
-        sol = sim.solve(solver=solver)
-
-        graphs.append(
-            {
-                "name": "Cycle",
-                "values": sol.summary_variables["Cycle number"].tolist(),
-            }
-        )
-        graphs.append(
-            {
-                "name": "Capacity [A.h]",
-                "fname": "Capacity",
-                "values": sol.summary_variables["Capacity [A.h]"].tolist(),
-            }
-        )
-
-        experiment_result.append({"graphs": graphs})
-        experiment_result2 = []
-        experiment_result2.append({"title": "Temperature"})
-        graphs = []
-        graphs.append({"name": "Time [s]", "values": sol["Time [s]"].entries.tolist()})
-        graphs.append(
-            {
-                "name": "Cell Temperature [C]",
-                "fname": f"C",
-                "values": sol["Cell temperature [C]"].entries.tolist(),
-            }
-        )
-
-        experiment_result2.append({"graphs": graphs})
-    return [experiment_result, experiment_result2]
