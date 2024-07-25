@@ -15,7 +15,6 @@ def simulate_lab3(request):
         print("New Request: ", request.json)
         data: dict = request.json
         battery_type: str = data.get("Type")
-        temperature: float = float(data.get("Ambient temperature [K]"))
         initial_charge: float = float(data.get("Initial SOC", 1)) * 0.01
 
         charging_properties: dict = data.get("Charging Properties")
@@ -40,7 +39,7 @@ def simulate_lab3(request):
         if cycles > 50:
             cycles = 50
 
-        utils.update_parameters(parameters, temperature, None, None, None)
+        utils.update_parameters(parameters, None, None, None, None)
 
         model = pybamm.lithium_ion.SPM({"SEI": "ec reaction limited"})
 
