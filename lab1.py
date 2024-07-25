@@ -10,11 +10,10 @@ def simulate_lab1(request):
         print("New Request: ", request.json)
         data = request.json
         battery_type = data.get("Type")
-        temperature = data.get("Ambient temperature [K]")
-        capacity = data.get("Nominal cell capacity [A.h]")
-        PosElectrodeThickness = data.get("Positive electrode thickness [m]")
+        temperature = float(data.get("Ambient temperature [K]"))
+        capacity = float(data.get("Nominal cell capacity [A.h]"))
         c_rates = data.get("C Rates", [1])
-        cycles = data.get("Cycles", 1)
+        cycles = int(data.get("Cycles", 1))
 
         if cycles > 50:
             cycles = 50
@@ -46,6 +45,7 @@ def simulate_lab1(request):
             parameters = utils.get_battery_parameters(
                 battery_type, degradation_enabled=True
             )
+            utils.update_parameters(parameters, temperature, capacity, None, None)
             print(
                 f"Discharge at {c_rate} C until 2 V",
                 f"Charge at {c_rate} C until 4 V",

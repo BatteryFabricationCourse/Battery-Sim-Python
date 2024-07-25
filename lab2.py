@@ -8,7 +8,7 @@ def simulate_lab2(request):
     try:
         print("New Request: ", request.json)
         data: dict = request.json
-        temperature: float = data.get("Ambient temperature [K]")
+        temperature: float = float(data.get("Ambient temperature [K]"))
         c_rate: float = data.get("C Rates", [1])[0]
         cycles: int = 3
         silicon_percent: float = data.get("Silicon Percentage")
@@ -83,17 +83,23 @@ def simulate_lab2(request):
                 )
             }
         )
+        
 
         experiment_result3 = [
-            {"title": "loss of capacity to SEI"},
+            {"title": "interfacial current density [A.m-2]"},
             {
                 "graphs": utils.plot_graphs_against_cycle(
                     sol,
                     cycles,
-                    {"Loss of capacity to negative SEI [A.h]": "Negative"},
+                    {
+                        "X-averaged negative electrode primary interfacial current density [A.m-2]": "Graphite",
+                        "X-averaged negative electrode secondary interfacial current density [A.m-2]": "Silicon",
+                    },
+                    "interfacial current density [A.m-2]"
                 )
             },
         ]
+
 
         experiment_result4 = [
             {"title": "Loss of Lithium"},
@@ -102,32 +108,17 @@ def simulate_lab2(request):
                     sol,
                     cycles,
                     {
-                        "Loss of lithium inventory [%]": "inv",
-                        "Loss of lithium inventory, including electrolyte [%]": "elec",
+                        "Loss of lithium inventory [%]": "Loss",
                     },
                 )
             },
         ]
 
-        experiment_result5 = [
-            {"title": "Change in Electrode Capacity"},
-            {
-                "graphs": utils.plot_graphs_against_cycle(
-                    sol,
-                    cycles,
-                    {
-                        "X-averaged total heating [W.m-3]": "Neg",
-                    },
-                )
-            },
-        ]
-        print(experiment_result5)
         final_result = [
             experiment_result1,
             experiment_result2,
             experiment_result3,
             experiment_result4,
-            experiment_result5,
         ]
         return jsonify(final_result)
 

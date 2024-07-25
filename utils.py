@@ -115,10 +115,12 @@ def split_at_peak(arr):
 
 
 # Returns graphs dictionary ready to be sent to the front-end
-def plot_graphs_against_cycle(solution, number_of_cycles, variables):
+def plot_graphs_against_cycle(solution, number_of_cycles, variables, y_axis_name= None):
     graphs = []
     for variable_name in variables:
         function = []
+        if y_axis_name == None:
+            y_axis_name = variable_name
         for cycle in solution.cycles:
             function += cycle[variable_name].entries.tolist()
         cycles_array = np.linspace(0, number_of_cycles, len(function))
@@ -130,7 +132,7 @@ def plot_graphs_against_cycle(solution, number_of_cycles, variables):
         )
         graphs.append(
             {
-                "name": variable_name,
+                "name": y_axis_name,
                 "fname": variables[variable_name],
                 "values": function,
             }
@@ -143,9 +145,16 @@ def update_parameters(
     parameters, temperature, capacity, PosElectrodeThickness, silicon_percent
 ):
     if temperature and temperature != 0:
-        parameters.update({"Ambient temperature [K]": float(temperature)})
+        parameters.update({"Ambient temperature [K]": temperature})
     if capacity and capacity != 0:
-        parameters.update({"Nominal cell capacity [A.h]": capacity})
+        nominal_capacity = parameters.get("Nominal cell capacity [A.h]")  # Default to 1.0 if not set
+        nominal_height = parameters.get("Electrode height [m]")  # Default to 1.0 if not set
+        
+        # Calculate the new height to achieve the desired capacity
+        new_height = nominal_height * (capacity / nominal_capacity)
+        
+        # Update parameters with the new height
+        parameters.update({"Electrode height [m]": new_height})
     if PosElectrodeThickness and PosElectrodeThickness != 0:
         parameters.update({"Positive electrode thickness [m]": PosElectrodeThickness})
     if silicon_percent:

@@ -15,7 +15,8 @@ def simulate_lab3(request):
         print("New Request: ", request.json)
         data: dict = request.json
         battery_type: str = data.get("Type")
-        temperature: float = data.get("Ambient temperature [K]")
+        temperature: float = float(data.get("Ambient temperature [K]"))
+        initial_charge: float = float(data.get("Initial SOC", 1)) * 0.01
 
         charging_properties: dict = data.get("Charging Properties")
         charge_current: float = charging_properties.get("Charge C", 1)
@@ -27,6 +28,7 @@ def simulate_lab3(request):
         discharge_voltage: float = charging_properties.get("Discharge V", 1)
         rest2_minutes: float = charging_properties.get("Rest 2T", 1)
         cycles: float = charging_properties.get("Cycles", 1)
+        print("Initial Charge:", initial_charge)
 
         if battery_type not in utils.batteries:
             return jsonify({"error": "Unsupported chemistry"}), 400
@@ -62,7 +64,7 @@ def simulate_lab3(request):
         )
         print("Running simulation Cycling\n")
         solver = pybamm.CasadiSolver("safe", dt_max=0.01)
-        sol = sim.solve(solver=solver, save_at_cycles=1, initial_soc=0.01)
+        sol = sim.solve(solver=solver, save_at_cycles=1, initial_soc=initial_charge)
 
         # Prepare data for plotting
         experiment_result = [{"title": "Capacity over Cycles"}]
@@ -199,6 +201,24 @@ def simulate_lab3(request):
                 "name": "Voltage [V]",
                 "fname": f"First",
                 "values": sol.cycles[0]["Voltage [V]"].entries.tolist(),
+            }
+        )
+        
+        graphs.append(
+            {
+                "name": "Throughput capacity [A.h]",
+                "values": sol.cycles[1][
+                    "Throughput capacity [A.h]"
+                ].entries.tolist(),
+            }
+        )
+        graphs.append(
+            {
+                "name": "Voltage [V]",
+                "fname": f"Second",
+                "values": sol.cycles[1][
+                    "Voltage [V]"
+                ].entries.tolist(),
             }
         )
 
