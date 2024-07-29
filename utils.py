@@ -49,21 +49,21 @@ def get_battery_parameters(battery_type, degradation_enabled=False):
     # Lower the "SEI kinetic rate constant [m.s-1]" value to increase battery degradation rate. 1e-14 = 1x10^-14
     if degradation_enabled:
         if battery_type == "NCA":
-            # parameters.update(
-            #    {"SEI kinetic rate constant [m.s-1]": 1e-14}, check_already_exists=False
-            # )'
+            parameters.update(
+                {"SEI kinetic rate constant [m.s-1]": 1e-14}, check_already_exists=False
+            )
             pass
         elif battery_type == "NMC":
-            # parameters.update(
-            #    {"SEI kinetic rate constant [m.s-1]": 1e-15},
-            #    check_already_exists=False,
-            # )
+            parameters.update(
+                {"SEI kinetic rate constant [m.s-1]": 1e-14},
+                check_already_exists=False,
+             )
             pass
         elif battery_type == "LFP":
-            # parameters.update(
-            #    {"SEI kinetic rate constant [m.s-1]": 5e-18},
+            #parameters.update(
+            #    {"SEI kinetic rate constant [m.s-1]": 1e-14},
             #    check_already_exists=False,
-            # )
+            #)
             parameters = pybamm.ParameterValues(batteries["NMC"])
             lfp_parameters = pybamm.ParameterValues(batteries["LFP"])
             parameters.update(lfp_parameters, check_already_exists=False)
@@ -155,6 +155,7 @@ def update_parameters(
         
         # Update parameters with the new height
         parameters.update({"Electrode height [m]": new_height})
+        parameters.update({"Nominal cell capacity [A.h]":capacity}, False)
     if PosElectrodeThickness and PosElectrodeThickness != 0:
         parameters.update({"Positive electrode thickness [m]": PosElectrodeThickness})
     if silicon_percent:

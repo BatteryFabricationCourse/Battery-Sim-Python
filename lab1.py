@@ -41,28 +41,28 @@ def simulate_lab1(request):
         experiment_result = [{"title": "Cycling"}]
         minV, maxV = utils.get_voltage_limits(battery_type)
         graphs = []
-        for c_rate in c_rates:
-            parameters = utils.get_battery_parameters(
+        parameters = utils.get_battery_parameters(
                 battery_type, degradation_enabled=True
             )
-            utils.update_parameters(parameters, temperature, capacity, None, None)
-            print(
-                f"Discharge at {c_rate} C until 2 V",
-                f"Charge at {c_rate} C until 4 V",
-            )
-            experiment = pybamm.Experiment(
+        utils.update_parameters(parameters, temperature, capacity, None, None)
+        i = 0
+        for c_rate in c_rates:
+            i = i + 1
+            c_experiment = pybamm.Experiment(
                 [
                     (
-                        f"Discharge at {c_rate + 0.01} C until {minV} V",
-                        f"Charge at {c_rate + 0.01} C until {maxV} V",
+                        f"Discharge at {c_rate + 0.001} C until {minV} V",
+                        f"Charge at {c_rate + 0.001} C until {maxV} V",
+                        f"Hold at {maxV}V until C/100",
                     )
                 ]
-                * cycles
+                * (cycles - 1)
+                + [f"Discharge at 0.1C until {minV} V (5 minute period)"]
             )
 
-            model = pybamm.lithium_ion.SPM({"SEI": "ec reaction limited"})
+            c_model = pybamm.lithium_ion.SPM({"SEI": "ec reaction limited"})
             sim = pybamm.Simulation(
-                model, parameter_values=parameters, experiment=experiment
+                c_model, parameter_values=parameters, experiment=c_experiment
             )
             print("Running simulation Cycling\n")
             solver = pybamm.CasadiSolver("safe")
@@ -74,13 +74,15 @@ def simulate_lab1(request):
                     "values": sol.summary_variables["Cycle number"].tolist(),
                 }
             )
+            print("i: ", i, " calc: ", len(c_rates)-i, " Actual C-Rate: ", c_rate, ", display c-rate: ", c_rates[len(c_rates)-i])
             graphs.append(
                 {
                     "name": "Capacity [A.h]",
-                    "fname": f"{c_rate}C",
-                    "values": sol.summary_variables["Measured capacity [A.h]"].tolist(),
+                    "fname": f"{c_rates[len(c_rates)-i]}C",
+                    "values": sol.summary_variables["Capacity [A.h]"].tolist(),
                 }
             )
+            del sol
 
         experiment_result.append({"graphs": graphs})
 
