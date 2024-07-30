@@ -42,8 +42,8 @@ def simulate_lab1(request):
         minV, maxV = utils.get_voltage_limits(battery_type)
         graphs = []
         parameters = utils.get_battery_parameters(
-                battery_type, degradation_enabled=True
-            )
+            battery_type, degradation_enabled=True
+        )
         utils.update_parameters(parameters, temperature, capacity, None, None)
         i = 0
         for c_rate in c_rates:
@@ -56,8 +56,7 @@ def simulate_lab1(request):
                         f"Hold at {maxV}V until C/100",
                     )
                 ]
-                * (cycles - 1)
-                + [f"Discharge at 0.1C until {minV} V (5 minute period)"]
+                * (cycles)
             )
 
             c_model = pybamm.lithium_ion.SPM({"SEI": "ec reaction limited"})
@@ -74,7 +73,16 @@ def simulate_lab1(request):
                     "values": sol.summary_variables["Cycle number"].tolist(),
                 }
             )
-            print("i: ", i, " calc: ", len(c_rates)-i, " Actual C-Rate: ", c_rate, ", display c-rate: ", c_rates[len(c_rates)-i])
+            print(
+                "i: ",
+                i,
+                " calc: ",
+                len(c_rates) - i,
+                " Actual C-Rate: ",
+                c_rate,
+                ", display c-rate: ",
+                c_rates[len(c_rates) - i],
+            )
             graphs.append(
                 {
                     "name": "Capacity [A.h]",
