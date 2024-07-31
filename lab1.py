@@ -24,7 +24,9 @@ def simulate_lab1(request):
         parameters = utils.get_battery_parameters(
             battery_type, degradation_enabled=False
         )
-        utils.update_parameters(parameters, temperature, capacity, None, None)
+        utils.update_parameters(
+            parameters, temperature, capacity, None, None, battery_type
+        )
 
         parameters.set_initial_stoichiometries(1)
         final_result = []
@@ -44,7 +46,9 @@ def simulate_lab1(request):
         parameters = utils.get_battery_parameters(
             battery_type, degradation_enabled=True
         )
-        utils.update_parameters(parameters, temperature, capacity, None, None)
+        utils.update_parameters(
+            parameters, temperature, capacity, None, None, battery_type
+        )
         i = 0
         for c_rate in c_rates:
             i = i + 1

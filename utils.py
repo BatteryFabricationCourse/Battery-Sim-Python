@@ -57,13 +57,13 @@ def get_battery_parameters(battery_type, degradation_enabled=False):
             parameters.update(
                 {"SEI kinetic rate constant [m.s-1]": 1e-14},
                 check_already_exists=False,
-             )
+            )
             pass
         elif battery_type == "LFP":
-            #parameters.update(
+            # parameters.update(
             #    {"SEI kinetic rate constant [m.s-1]": 1e-14},
             #    check_already_exists=False,
-            #)
+            # )
             parameters = pybamm.ParameterValues(batteries["NMC"])
             lfp_parameters = pybamm.ParameterValues(batteries["LFP"])
             parameters.update(lfp_parameters, check_already_exists=False)
@@ -115,7 +115,7 @@ def split_at_peak(arr):
 
 
 # Returns graphs dictionary ready to be sent to the front-end
-def plot_graphs_against_cycle(solution, number_of_cycles, variables, y_axis_name= None):
+def plot_graphs_against_cycle(solution, number_of_cycles, variables, y_axis_name=None):
     graphs = []
     for variable_name in variables:
         function = []
@@ -142,20 +142,35 @@ def plot_graphs_against_cycle(solution, number_of_cycles, variables, y_axis_name
 
 
 def update_parameters(
-    parameters, temperature, capacity, PosElectrodeThickness, silicon_percent
+    parameters,
+    temperature,
+    capacity,
+    PosElectrodeThickness,
+    silicon_percent,
+    battery_type,
 ):
     if temperature and temperature != 0:
         parameters.update({"Ambient temperature [K]": temperature})
     if capacity and capacity != 0:
-        nominal_capacity = parameters.get("Nominal cell capacity [A.h]")  # Default to 1.0 if not set
-        nominal_height = parameters.get("Electrode height [m]")  # Default to 1.0 if not set
-        
+        if battery_type == "NMC" and capacity == 5:
+            return
+        nominal_capacity = parameters.get(
+            "Nominal cell capacity [A.h]"
+        )  # Default to 1.0 if not set
+        nominal_height = parameters.get(
+            "Electrode height [m]"
+        )  # Default to 1.0 if not set
+
         # Calculate the new height to achieve the desired capacity
         new_height = nominal_height * (capacity / nominal_capacity)
-        
+        if battery_type == "NCA":
+            new_height = new_height * (10 / 11.77)
+        if battery_type == "NMC" and capacity != 5:
+            new_height = new_height * (10 / 9.67)
+
         # Update parameters with the new height
         parameters.update({"Electrode height [m]": new_height})
-        parameters.update({"Nominal cell capacity [A.h]":capacity}, False)
+        parameters.update({"Nominal cell capacity [A.h]": capacity}, False)
     if PosElectrodeThickness and PosElectrodeThickness != 0:
         parameters.update({"Positive electrode thickness [m]": PosElectrodeThickness})
     if silicon_percent:

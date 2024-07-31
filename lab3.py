@@ -39,7 +39,7 @@ def simulate_lab3(request):
         if cycles > 50:
             cycles = 50
 
-        utils.update_parameters(parameters, None, None, None, None)
+        utils.update_parameters(parameters, None, 5, None, None, battery_type)
 
         model = pybamm.lithium_ion.SPM({"SEI": "ec reaction limited"})
 
@@ -202,22 +202,18 @@ def simulate_lab3(request):
                 "values": sol.cycles[0]["Voltage [V]"].entries.tolist(),
             }
         )
-        
+
         graphs.append(
             {
                 "name": "Throughput capacity [A.h]",
-                "values": sol.cycles[1][
-                    "Throughput capacity [A.h]"
-                ].entries.tolist(),
+                "values": sol.cycles[1]["Throughput capacity [A.h]"].entries.tolist(),
             }
         )
         graphs.append(
             {
                 "name": "Voltage [V]",
                 "fname": f"Second",
-                "values": sol.cycles[1][
-                    "Voltage [V]"
-                ].entries.tolist(),
+                "values": sol.cycles[1]["Voltage [V]"].entries.tolist(),
             }
         )
 
