@@ -9,11 +9,11 @@ def simulate_lab1(request):
     try:
         print("New Request: ", request.json)
         data = request.json
-        battery_type = data.get("Type")
-        temperature = float(data.get("Ambient temperature [K]"))
-        capacity = float(data.get("Nominal cell capacity [A.h]"))
-        c_rates = data.get("C Rates", [1])
-        cycles = int(data.get("Cycles", 1))
+        battery_type:str = data.get("Type")
+        temperature:float = float(data.get("Ambient temperature [K]"))
+        capacity:float = float(data.get("Nominal cell capacity [A.h]"))
+        c_rates:list = data.get("C Rates", [1])
+        cycles:int = int(data.get("Cycles", 1))
 
         if cycles > 50:
             cycles = 50

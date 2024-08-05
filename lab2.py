@@ -34,7 +34,7 @@ def simulate_lab2(request):
                 "Secondary: Maximum concentration in negative electrode [mol.m-3]": 278000,
             }
         )
-        utils.update_parameters(parameters, temperature, None, None, silicon_percent)
+        utils.update_parameters(parameters, temperature, None, None, silicon_percent, "LG M50")
 
         fast_solver = pybamm.CasadiSolver(
             "safe", dt_max=3600, extra_options_setup={"max_num_steps": 1000}
