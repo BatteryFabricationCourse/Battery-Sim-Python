@@ -14,7 +14,7 @@ batteries: dict = {
 
 
 # Add voltage limit for lfp 3.65, 2.5, NMC 4.2, 3, NCA, 4.3, 2.5
-def get_voltage_limits(battery_type:str) -> (int, int):
+def get_voltage_limits(battery_type: str) -> (int, int):
     if battery_type == "LFP":
         return 2.5, 3.65
     if battery_type == "NMC":
@@ -24,7 +24,7 @@ def get_voltage_limits(battery_type:str) -> (int, int):
 
 
 # Interpolate array to given size
-def interpolate_array(input_array:list, output_size:int) -> list:
+def interpolate_array(input_array: list, output_size: int) -> list:
     input_array = np.array(input_array)
     input_size = len(input_array)
 
@@ -39,11 +39,13 @@ def interpolate_array(input_array:list, output_size:int) -> list:
 
 
 # Cut the array in half, select every other element
-def remove_every_other_from_array(list:list)-> list:
+def remove_every_other_from_array(list: list) -> list:
     return list[::2]
 
 
-def get_battery_parameters(battery_type:str, degradation_enabled=False)-> pybamm.ParameterValues:
+def get_battery_parameters(
+    battery_type: str, degradation_enabled=False
+) -> pybamm.ParameterValues:
     parameters = pybamm.ParameterValues(batteries[battery_type])
 
     # Lower the "SEI kinetic rate constant [m.s-1]" value to increase battery degradation rate. 1e-14 = 1x10^-14
@@ -54,10 +56,10 @@ def get_battery_parameters(battery_type:str, degradation_enabled=False)-> pybamm
             )
             pass
         elif battery_type == "NMC":
-            parameters.update(
-                {"SEI kinetic rate constant [m.s-1]": 1e-14},
-                check_already_exists=False,
-            )
+            # parameters.update(
+            #    {"SEI kinetic rate constant [m.s-1]": 1e-14},
+            #    check_already_exists=False,
+            # )
             pass
         elif battery_type == "LFP":
             # parameters.update(
@@ -72,7 +74,9 @@ def get_battery_parameters(battery_type:str, degradation_enabled=False)-> pybamm
 
 
 # Returns graph dictionary ready to be sent to the front-end
-def plot_against_cycle(solution:pybamm.Solution, number_of_cycles:int, variable_name:str, func_name="") -> list:
+def plot_against_cycle(
+    solution: pybamm.Solution, number_of_cycles: int, variable_name: str, func_name=""
+) -> list:
     function = []
 
     graphs = []
@@ -101,7 +105,7 @@ def plot_against_cycle(solution:pybamm.Solution, number_of_cycles:int, variable_
     return graphs
 
 
-def split_at_peak(arr:list) -> list:
+def split_at_peak(arr: list) -> list:
     if len(arr) == 0:
         return np.array([]), np.array(
             []
@@ -116,11 +120,13 @@ def split_at_peak(arr:list) -> list:
 
 def split_at_valley(arr) -> list:
     if len(arr) == 0:
-        return np.array([]), np.array([])  # Return empty arrays if the input array is empty
+        return np.array([]), np.array(
+            []
+        )  # Return empty arrays if the input array is empty
 
     valley_index = np.argmin(arr)  # Find the index of the valley value (minimum value)
     left_part = arr[:valley_index]  # Elements to the left of the valley
-    right_part = arr[valley_index + 1:]  # Elements to the right of the valley
+    right_part = arr[valley_index + 1 :]  # Elements to the right of the valley
 
     return left_part, right_part
 
@@ -128,12 +134,18 @@ def split_at_valley(arr) -> list:
 def norm_array_start(arr) -> list:
     offset = arr[0]
     for i in range(0, len(arr)):
-        print(i, ": ", arr[i], " - ",offset )
+        print(i, ": ", arr[i], " - ", offset)
         arr[i] -= offset
     return arr
 
+
 # Returns graphs dictionary ready to be sent to the front-end
-def plot_graphs_against_cycle(solution:pybamm.Solution, number_of_cycles:int, variables:list, y_axis_name:str=None) -> list:
+def plot_graphs_against_cycle(
+    solution: pybamm.Solution,
+    number_of_cycles: int,
+    variables: list,
+    y_axis_name: str = None,
+) -> list:
     graphs = []
     for variable_name in variables:
         function = []
@@ -159,7 +171,9 @@ def plot_graphs_against_cycle(solution:pybamm.Solution, number_of_cycles:int, va
     return graphs
 
 
-def extract_values_from_sub_sol(solution:pybamm.Solution, x_property:str, y_property:str, start:int, end:int) -> (list, list):
+def extract_values_from_sub_sol(
+    solution: pybamm.Solution, x_property: str, y_property: str, start: int, end: int
+) -> (list, list):
     x_return = []
     y_return = []
     print("Extracting values...")
@@ -168,25 +182,27 @@ def extract_values_from_sub_sol(solution:pybamm.Solution, x_property:str, y_prop
             print("i too big, breaking", i, " end: ", end)
             break
         if i != start:
-            x_return += (solution.sub_solutions[i][x_property].entries + x_return[-1]).tolist()
+            x_return += (
+                solution.sub_solutions[i][x_property].entries + x_return[-1]
+            ).tolist()
             print("Added offset, ", i)
         else:
             x_return += solution.sub_solutions[i][x_property].entries.tolist()
             print("Added first element")
-            
+
         y_return += solution.sub_solutions[i][y_property].entries.tolist()
-        
+
     print("complete")
     return x_return, y_return
 
 
 def update_parameters(
-    parameters:pybamm.ParameterValues,
-    temperature:float,
-    capacity:float,
-    PosElectrodeThickness:float,
-    silicon_percent:float,
-    battery_type:str,
+    parameters: pybamm.ParameterValues,
+    temperature: float,
+    capacity: float,
+    PosElectrodeThickness: float,
+    silicon_percent: float,
+    battery_type: str,
 ) -> None:
     if temperature and temperature != 0:
         parameters.update({"Ambient temperature [K]": temperature})
@@ -226,7 +242,9 @@ def update_parameters(
         )
 
 
-def run_charging_experiments(battery_type:str, c_rates:list, mode:str, parameters:pybamm.ParameterValues) -> dict:
+def run_charging_experiments(
+    battery_type: str, c_rates: list, mode: str, parameters: pybamm.ParameterValues
+) -> dict:
     experiment_result = [{"title": f"{mode.capitalize()[:-1]}ing at different C Rates"}]
     graphs = []
     model = pybamm.lithium_ion.SPM()
