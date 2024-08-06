@@ -52,15 +52,18 @@ def simulate_lab1(request):
         i = 0
         for c_rate in c_rates:
             i = i + 1
+            v_crate = utils.get_virtual_c_rate(float(c_rate))
+            print("V C-rate: ", v_crate, " for ", c_rate)
+            
             c_experiment = pybamm.Experiment(
                 [
                     (
-                        f"Discharge at {c_rate + 0.001} C until {minV} V",
-                        f"Charge at {c_rate + 0.001} C until {maxV} V",
-                        f"Hold at {maxV}V until C/100",
+                        f"Charge at {v_crate} C for 10 hours or until {maxV} V",
+                        f"Discharge at {v_crate} C for 10 hours or until {minV} V",
+                        f"Hold at {maxV}V for 1 hour or until C/100",
                     )
                 ]
-                * (cycles)
+                * cycles
             )
 
             c_model = pybamm.lithium_ion.SPM({"SEI": "ec reaction limited"})
@@ -90,7 +93,8 @@ def simulate_lab1(request):
             graphs.append(
                 {
                     "name": "Capacity [A.h]",
-                    "fname": f"{c_rates[len(c_rates)-i]}C",
+                    #"fname": f"{c_rates[len(c_rates)-i]}C",
+                    "fname": f"{c_rate}C",
                     "values": sol.summary_variables["Capacity [A.h]"].tolist(),
                 }
             )

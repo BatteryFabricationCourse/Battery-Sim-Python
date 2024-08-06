@@ -12,6 +12,7 @@ batteries: dict = {
     "LFPBackup": "Ecker2015",
 }
 
+# Switch window
 
 # Add voltage limit for lfp 3.65, 2.5, NMC 4.2, 3, NCA, 4.3, 2.5
 def get_voltage_limits(battery_type: str) -> (int, int):
@@ -22,6 +23,23 @@ def get_voltage_limits(battery_type: str) -> (int, int):
     if battery_type == "NCA":
         return 2.5, 4.3
 
+
+
+
+def get_virtual_c_rate(x):
+    # Coefficients of the quadratic function
+    a = 0.861111
+    b = -5.39167
+    c = 5.53056
+    
+    # Ensure the input is within the expected range
+    if x < 0.1 or x > 5:
+        raise ValueError("Input value out of range")
+    
+    # Apply the quadratic transformation
+    y = a * x**2 + b * x + c
+    
+    return y
 
 # Interpolate array to given size
 def interpolate_array(input_array: list, output_size: int) -> list:
@@ -52,23 +70,23 @@ def get_battery_parameters(
     if degradation_enabled:
         if battery_type == "NCA":
             parameters.update(
-                {"SEI kinetic rate constant [m.s-1]": 1e-14}, check_already_exists=False
+                {"SEI kinetic rate constant [m.s-1]": 0.07e-14}, check_already_exists=False
             )
             pass
         elif battery_type == "NMC":
-            # parameters.update(
-            #    {"SEI kinetic rate constant [m.s-1]": 1e-14},
-            #    check_already_exists=False,
-            # )
+            parameters.update(
+                {"SEI kinetic rate constant [m.s-1]": 0.15e-14},
+                check_already_exists=False,
+            )
             pass
         elif battery_type == "LFP":
-            # parameters.update(
-            #    {"SEI kinetic rate constant [m.s-1]": 1e-14},
-            #    check_already_exists=False,
-            # )
-            parameters = pybamm.ParameterValues(batteries["NMC"])
+            parameters = pybamm.ParameterValues(batteries["NCA"])
             lfp_parameters = pybamm.ParameterValues(batteries["LFP"])
             parameters.update(lfp_parameters, check_already_exists=False)
+            parameters.update(
+                {"SEI kinetic rate constant [m.s-1]": 0.05e-14},
+                check_already_exists=False,
+             )
 
     return parameters
 

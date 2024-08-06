@@ -40,13 +40,14 @@ def simulate_lab3(request):
 
         final_result = []
         graphs = []
+        
         experiment = pybamm.Experiment(
             [
                 (
-                    f"Charge at {charge_current} C until {charge_voltage} V",
-                    f"Hold at {hold_voltage} V until C*{hold_current}",
+                    f"Charge at {0.5/charge_current} C for 10 hours or until {charge_voltage} V",
+                    f"Hold at {hold_voltage} V for 2 hours or until C*{hold_current}",
                     f"Rest for {rest1_minutes} minutes",
-                    f"Discharge at {discharge_current} C until {discharge_voltage} V",
+                    f"Discharge at {0.5/discharge_current} C for 10 hours or until {discharge_voltage} V",
                     f"Rest for {rest2_minutes} minutes",
                 )
             ]
@@ -86,7 +87,7 @@ def simulate_lab3(request):
         )
         final_result.append(experiment_result)
 
-        experiment_result = [{"title": "Charging in first and last cycle"}]
+        experiment_result = [{"title": "Charging in different Cycles"}]
 
         graphs = []
         cycle1_charge, cycle1_discharge = utils.split_at_peak(
@@ -179,7 +180,7 @@ def simulate_lab3(request):
 
         final_result.append(experiment_result)
 
-        experiment_result = [{"title": "discharge graphs"}]
+        experiment_result = [{"title": "Discharging in different Cycles"}]
 
         graphs = []
 
