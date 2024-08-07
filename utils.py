@@ -70,7 +70,7 @@ def get_battery_parameters(
     if degradation_enabled:
         if battery_type == "NCA":
             parameters.update(
-                {"SEI kinetic rate constant [m.s-1]": 0.07e-14}, check_already_exists=False
+                {"SEI kinetic rate constant [m.s-1]": 0.06e-14}, check_already_exists=False
             )
             pass
         elif battery_type == "NMC":
@@ -171,6 +171,8 @@ def plot_graphs_against_cycle(
             y_axis_name = variable_name
         for cycle in solution.cycles:
             function += cycle[variable_name].entries.tolist()
+        
+        function += function[-1]
         cycles_array = np.linspace(0, number_of_cycles, len(function))
         graphs.append(
             {

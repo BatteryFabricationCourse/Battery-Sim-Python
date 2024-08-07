@@ -28,11 +28,12 @@ def simulate_lab1(request):
             parameters, temperature, capacity, None, None, battery_type
         )
 
-        parameters.set_initial_stoichiometries(1)
         final_result = []
         final_result.append(
             utils.run_charging_experiments(battery_type, c_rates, "Charge", parameters)
         )
+        
+        parameters.set_initial_stoichiometries(1)
         final_result.append(
             utils.run_charging_experiments(
                 battery_type, c_rates, "Discharge", parameters
@@ -92,7 +93,7 @@ def simulate_lab1(request):
             )
             graphs.append(
                 {
-                    "name": "Capacity [A.h]",
+                    "name": "Discharge capacity [A.h]",
                     #"fname": f"{c_rates[len(c_rates)-i]}C",
                     "fname": f"{c_rate}C",
                     "values": sol.summary_variables["Capacity [A.h]"].tolist(),
