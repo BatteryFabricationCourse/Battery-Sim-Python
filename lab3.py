@@ -67,6 +67,7 @@ def simulate_lab3(request):
         graphs.append(
             {
                 "name": "Cycle",
+                "round":True,
                 "values": sol.summary_variables["Cycle number"].tolist(),
             }
         )
@@ -83,7 +84,7 @@ def simulate_lab3(request):
         experiment_result = [{"title": "Voltage over Cycles"}]
 
         experiment_result.append(
-            {"graphs": utils.plot_against_cycle(sol, cycles, "Voltage [V]", "Voltage")}
+            {"graphs": utils.plot_against_cycle(sol, cycles, "Voltage [V]", "Voltage", True)}
         )
         final_result.append(experiment_result)
 

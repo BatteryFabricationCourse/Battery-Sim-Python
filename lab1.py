@@ -78,29 +78,23 @@ def simulate_lab1(request):
             graphs.append(
                 {
                     "name": "Cycle",
+                    "round":True,
+                    #"values": utils.interpolate_array(sol.summary_variables["Cycle number"].tolist(), 24, True),
                     "values": sol.summary_variables["Cycle number"].tolist(),
                 }
-            )
-            print(
-                "i: ",
-                i,
-                " calc: ",
-                len(c_rates) - i,
-                " Actual C-Rate: ",
-                c_rate,
-                ", display c-rate: ",
-                c_rates[len(c_rates) - i],
             )
             graphs.append(
                 {
                     "name": "Discharge capacity [A.h]",
                     #"fname": f"{c_rates[len(c_rates)-i]}C",
                     "fname": f"{c_rate}C",
-                    "values": sol.summary_variables["Capacity [A.h]"].tolist(),
+                    "values": sol.summary_variables["Capacity [A.h]"].tolist()
+                    #"values": utils.interpolate_array(sol.summary_variables["Capacity [A.h]"].tolist(),24)
                 }
             )
             del sol
 
+        print("Cycling Graph: ", graphs)
         experiment_result.append({"graphs": graphs})
 
         final_result.append(experiment_result)

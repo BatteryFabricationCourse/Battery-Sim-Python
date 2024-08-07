@@ -42,7 +42,7 @@ def get_virtual_c_rate(x):
     return y
 
 # Interpolate array to given size
-def interpolate_array(input_array: list, output_size: int) -> list:
+def interpolate_array(input_array: list, output_size: int, round_values:bool = False) -> list:
     input_array = np.array(input_array)
     input_size = len(input_array)
 
@@ -52,6 +52,10 @@ def interpolate_array(input_array: list, output_size: int) -> list:
     pchip_interp_func = PchipInterpolator(input_indices, input_array)
 
     output_array = pchip_interp_func(output_indices)
+    
+    if round_values:
+        for i in range( len(output_array)):
+            output_array[i] = round(output_array[i])
 
     return output_array.tolist()
 
@@ -93,13 +97,16 @@ def get_battery_parameters(
 
 # Returns graph dictionary ready to be sent to the front-end
 def plot_against_cycle(
-    solution: pybamm.Solution, number_of_cycles: int, variable_name: str, func_name=""
+    solution: pybamm.Solution, number_of_cycles: int, variable_name: str, func_name="",round_x:bool = False
 ) -> list:
     function = []
 
     graphs = []
     for cycle in solution.cycles:
         function += cycle[variable_name].entries.tolist()
+    
+    if len(function) > 8100:
+        function = interpolate_array(function, 8100)
 
     print("Number of Samples: ", len(function))
     # while len(function) > 8100:
@@ -109,6 +116,7 @@ def plot_against_cycle(
     graphs.append(
         {
             "name": "Cycle",
+            "round":round_x,
             "values": cycles_array.tolist(),
         }
     )
@@ -156,6 +164,12 @@ def norm_array_start(arr) -> list:
         arr[i] -= offset
     return arr
 
+def float_array_to_str_array(arr):
+    result = []
+    for item in arr:
+        result += [str(item)]
+        
+    return result
 
 # Returns graphs dictionary ready to be sent to the front-end
 def plot_graphs_against_cycle(
@@ -163,6 +177,7 @@ def plot_graphs_against_cycle(
     number_of_cycles: int,
     variables: list,
     y_axis_name: str = None,
+    round_x:bool = False
 ) -> list:
     graphs = []
     for variable_name in variables:
@@ -172,11 +187,11 @@ def plot_graphs_against_cycle(
         for cycle in solution.cycles:
             function += cycle[variable_name].entries.tolist()
         
-        function += function[-1]
         cycles_array = np.linspace(0, number_of_cycles, len(function))
         graphs.append(
             {
                 "name": "Cycle",
+                "round":round_x,
                 "values": cycles_array.tolist(),
             }
         )
