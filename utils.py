@@ -1,6 +1,7 @@
 import pybamm
 import numpy as np
 from scipy.interpolate import PchipInterpolator
+import math
 
 # Battery titles in the front end mapping to the parameter set in PyBAMM
 batteries: dict = {
@@ -14,6 +15,7 @@ batteries: dict = {
 
 # Switch window
 
+
 # Add voltage limit for lfp 3.65, 2.5, NMC 4.2, 3, NCA, 4.3, 2.5
 def get_voltage_limits(battery_type: str) -> (int, int):
     if battery_type == "LFP":
@@ -24,25 +26,19 @@ def get_voltage_limits(battery_type: str) -> (int, int):
         return 2.5, 4.3
 
 
-
-
 def get_virtual_c_rate(x):
-    # Coefficients of the quadratic function
-    a = 0.861111
-    b = -5.39167
-    c = 5.53056
-    
-    # Ensure the input is within the expected range
-    if x < 0.1 or x > 5:
-        raise ValueError("Input value out of range")
-    
-    # Apply the quadratic transformation
-    y = a * x**2 + b * x + c
-    
+    # Ensure the argument inside the logarithm is positive
+    if 4.92064 * x - 0.489686 <= 0:
+        raise ValueError("The argument of the logarithm must be positive.")
+
+    y = 1.79076 - 0.531217 * math.log(4.92064 * x - 0.489686)
     return y
 
+
 # Interpolate array to given size
-def interpolate_array(input_array: list, output_size: int, round_values:bool = False) -> list:
+def interpolate_array(
+    input_array: list, output_size: int, round_values: bool = False
+) -> list:
     input_array = np.array(input_array)
     input_size = len(input_array)
 
@@ -52,9 +48,9 @@ def interpolate_array(input_array: list, output_size: int, round_values:bool = F
     pchip_interp_func = PchipInterpolator(input_indices, input_array)
 
     output_array = pchip_interp_func(output_indices)
-    
+
     if round_values:
-        for i in range( len(output_array)):
+        for i in range(len(output_array)):
             output_array[i] = round(output_array[i])
 
     return output_array.tolist()
@@ -74,7 +70,8 @@ def get_battery_parameters(
     if degradation_enabled:
         if battery_type == "NCA":
             parameters.update(
-                {"SEI kinetic rate constant [m.s-1]": 0.06e-14}, check_already_exists=False
+                {"SEI kinetic rate constant [m.s-1]": 0.06e-14},
+                check_already_exists=False,
             )
             pass
         elif battery_type == "NMC":
@@ -90,21 +87,25 @@ def get_battery_parameters(
             parameters.update(
                 {"SEI kinetic rate constant [m.s-1]": 0.05e-14},
                 check_already_exists=False,
-             )
+            )
 
     return parameters
 
 
 # Returns graph dictionary ready to be sent to the front-end
 def plot_against_cycle(
-    solution: pybamm.Solution, number_of_cycles: int, variable_name: str, func_name="",round_x:bool = False
+    solution: pybamm.Solution,
+    number_of_cycles: int,
+    variable_name: str,
+    func_name="",
+    round_x: bool = False,
 ) -> list:
     function = []
 
     graphs = []
     for cycle in solution.cycles:
         function += cycle[variable_name].entries.tolist()
-    
+
     if len(function) > 8100:
         function = interpolate_array(function, 8100)
 
@@ -116,7 +117,7 @@ def plot_against_cycle(
     graphs.append(
         {
             "name": "Cycle",
-            "round":round_x,
+            "round": round_x,
             "values": cycles_array.tolist(),
         }
     )
@@ -164,12 +165,14 @@ def norm_array_start(arr) -> list:
         arr[i] -= offset
     return arr
 
+
 def float_array_to_str_array(arr):
     result = []
     for item in arr:
         result += [str(item)]
-        
+
     return result
+
 
 # Returns graphs dictionary ready to be sent to the front-end
 def plot_graphs_against_cycle(
@@ -177,7 +180,7 @@ def plot_graphs_against_cycle(
     number_of_cycles: int,
     variables: list,
     y_axis_name: str = None,
-    round_x:bool = False
+    round_x: bool = False,
 ) -> list:
     graphs = []
     for variable_name in variables:
@@ -186,12 +189,12 @@ def plot_graphs_against_cycle(
             y_axis_name = variable_name
         for cycle in solution.cycles:
             function += cycle[variable_name].entries.tolist()
-        
+
         cycles_array = np.linspace(0, number_of_cycles, len(function))
         graphs.append(
             {
                 "name": "Cycle",
-                "round":round_x,
+                "round": round_x,
                 "values": cycles_array.tolist(),
             }
         )

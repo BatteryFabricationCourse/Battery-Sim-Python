@@ -9,11 +9,11 @@ def simulate_lab1(request):
     try:
         print("New Request: ", request.json)
         data = request.json
-        battery_type:str = data.get("Type")
-        temperature:float = float(data.get("Ambient temperature [K]"))
-        capacity:float = float(data.get("Nominal cell capacity [A.h]"))
-        c_rates:list = data.get("C Rates", [1])
-        cycles:int = int(data.get("Cycles", 1))
+        battery_type: str = data.get("Type")
+        temperature: float = float(data.get("Ambient temperature [K]"))
+        capacity: float = float(data.get("Nominal cell capacity [A.h]"))
+        c_rates: list = data.get("C Rates", [1])
+        cycles: int = int(data.get("Cycles", 1))
 
         if cycles > 50:
             cycles = 50
@@ -32,7 +32,7 @@ def simulate_lab1(request):
         final_result.append(
             utils.run_charging_experiments(battery_type, c_rates, "Charge", parameters)
         )
-        
+
         parameters.set_initial_stoichiometries(1)
         final_result.append(
             utils.run_charging_experiments(
@@ -55,7 +55,7 @@ def simulate_lab1(request):
             i = i + 1
             v_crate = utils.get_virtual_c_rate(float(c_rate))
             print("V C-rate: ", v_crate, " for ", c_rate)
-            
+
             c_experiment = pybamm.Experiment(
                 [
                     (
@@ -78,18 +78,18 @@ def simulate_lab1(request):
             graphs.append(
                 {
                     "name": "Cycle",
-                    "round":True,
-                    #"values": utils.interpolate_array(sol.summary_variables["Cycle number"].tolist(), 24, True),
+                    "round": True,
+                    # "values": utils.interpolate_array(sol.summary_variables["Cycle number"].tolist(), 24, True),
                     "values": sol.summary_variables["Cycle number"].tolist(),
                 }
             )
             graphs.append(
                 {
                     "name": "Discharge capacity [A.h]",
-                    #"fname": f"{c_rates[len(c_rates)-i]}C",
+                    # "fname": f"{c_rates[len(c_rates)-i]}C",
                     "fname": f"{c_rate}C",
-                    "values": sol.summary_variables["Capacity [A.h]"].tolist()
-                    #"values": utils.interpolate_array(sol.summary_variables["Capacity [A.h]"].tolist(),24)
+                    "values": sol.summary_variables["Capacity [A.h]"].tolist(),
+                    # "values": utils.interpolate_array(sol.summary_variables["Capacity [A.h]"].tolist(),24)
                 }
             )
             del sol
