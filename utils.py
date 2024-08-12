@@ -238,7 +238,7 @@ def update_parameters(
     parameters: pybamm.ParameterValues,
     temperature: float,
     capacity: float,
-    PosElectrodeThickness: float,
+    NegElectrodeThickness: float,
     silicon_percent: float,
     battery_type: str,
 ) -> None:
@@ -264,8 +264,8 @@ def update_parameters(
         # Update parameters with the new height
         parameters.update({"Electrode height [m]": new_height})
         parameters.update({"Nominal cell capacity [A.h]": capacity}, False)
-    if PosElectrodeThickness and PosElectrodeThickness != 0:
-        parameters.update({"Positive electrode thickness [m]": PosElectrodeThickness})
+    if NegElectrodeThickness and NegElectrodeThickness != 0:
+        parameters.update({"Negative electrode thickness [m]": NegElectrodeThickness})
     if silicon_percent:
         silicon_percent *= 0.5
         parameters.update(

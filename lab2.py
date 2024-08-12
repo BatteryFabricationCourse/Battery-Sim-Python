@@ -11,7 +11,9 @@ def simulate_lab2(request):
         temperature: float = float(data.get("Ambient temperature [K]"))
         c_rate: float = data.get("C Rates", [1])[0]
         cycles: int = 3
-        silicon_percent: float = data.get("Silicon Percentage")
+        silicon_percent: float = float(data.get("Silicon Percentage"))
+        seperator_thickness = float(data.get('Separator thickness [um]'))
+        anode_thickness = float(data.get("Negative electrode thickness [um]"))
 
         model = pybamm.lithium_ion.DFN(
             {
@@ -61,7 +63,9 @@ def simulate_lab2(request):
             solver=fast_solver,
             experiment=cycling_experiment,
         )
-
+        if seperator_thickness != None and anode_thickness != None:
+            parameters.update({"Separator thickness [m]":seperator_thickness  *1e-6,
+                           "Negative electrode thickness [m]":anode_thickness *1e-6})
         sol = sim.solve(calc_esoh=False, save_at_cycles=1)
         print("Number of Cycles: ", len(sol.cycles))
         print("Solution took: ", sol.solve_time)

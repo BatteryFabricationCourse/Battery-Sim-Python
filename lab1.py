@@ -43,7 +43,8 @@ def simulate_lab1(request):
         # Cycling
         experiment_result = [{"title": "Cycling"}]
         minV, maxV = utils.get_voltage_limits(battery_type)
-        graphs = []
+        cycling_graphs = []
+        lithium_graphs = []
         parameters = utils.get_battery_parameters(
             battery_type, degradation_enabled=True
         )
@@ -67,15 +68,16 @@ def simulate_lab1(request):
                 * cycles
             )
 
-            c_model = pybamm.lithium_ion.SPM({"SEI": "ec reaction limited"})
+            c_model = pybamm.lithium_ion.SPM({"SEI": "ec reaction limited", "thermal": "lumped"})
             sim = pybamm.Simulation(
                 c_model, parameter_values=parameters, experiment=c_experiment
             )
             print("Running simulation Cycling\n")
             solver = pybamm.CasadiSolver("safe")
-            sol = sim.solve(solver=solver)
+            sol:pybamm.Solution = sim.solve(solver=solver, save_at_cycles=1)
+            #print(sol.summary_variables.keys())
 
-            graphs.append(
+            cycling_graphs.append(
                 {
                     "name": "Cycle",
                     "round": True,
@@ -83,7 +85,7 @@ def simulate_lab1(request):
                     "values": sol.summary_variables["Cycle number"].tolist(),
                 }
             )
-            graphs.append(
+            cycling_graphs.append(
                 {
                     "name": "Discharge capacity [A.h]",
                     # "fname": f"{c_rates[len(c_rates)-i]}C",
@@ -92,11 +94,30 @@ def simulate_lab1(request):
                     # "values": utils.interpolate_array(sol.summary_variables["Capacity [A.h]"].tolist(),24)
                 }
             )
+            #lithium_graphs.append(
+            #    {
+            #        "name": "Cycle",
+            #        "round": True,
+            #        # "values": utils.interpolate_array(sol.summary_variables["Cycle number"].tolist(), 24, True),
+            #        "values": sol.summary_variables["Cycle number"].tolist(),
+            #    }
+            #)
+            #lithium_graphs.append(
+            #    {
+            #        "name": "Loss of lithium inventory [%]",
+            #        # "fname": f"{c_rates[len(c_rates)-i]}C",
+            #        "fname": f"{c_rate}C",
+            #        "values": sol.summary_variables["Loss of lithium inventory [%]"].tolist(),
+            #        # "values": utils.interpolate_array(sol.summary_variables["Capacity [A.h]"].tolist(),24)
+            #    }
+            #)
+            
+            lithium_graphs += utils.plot_against_cycle(sol, cycles, "Loss of lithium inventory [%]", f"{c_rate}C")
             del sol
-
-        print("Cycling Graph: ", graphs)
-        experiment_result.append({"graphs": graphs})
-
+        experiment_result.append({"graphs": cycling_graphs})
+        final_result.append(experiment_result)
+        
+        experiment_result = [{"title": "Loss of Lithium"}, {"graphs":lithium_graphs}]
         final_result.append(experiment_result)
         return jsonify(final_result)
 
