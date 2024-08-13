@@ -10,10 +10,11 @@ def simulate_lab2(request):
         data: dict = request.json
         temperature: float = float(data.get("Ambient temperature [K]"))
         c_rate: float = data.get("C Rates", [1])[0]
-        cycles: int = 3
+        # cycles: int = 3
         silicon_percent: float = float(data.get("Silicon Percentage"))
-        seperator_thickness = float(data.get('Separator thickness [um]'))
+        cycles = int(data.get("Cycles"))
         anode_thickness = float(data.get("Negative electrode thickness [um]"))
+        seperator_thickness = float(data.get("Separator thickness [um]"))
 
         model = pybamm.lithium_ion.DFN(
             {
@@ -36,36 +37,43 @@ def simulate_lab2(request):
                 "Secondary: Maximum concentration in negative electrode [mol.m-3]": 278000,
             }
         )
-        utils.update_parameters(parameters, temperature, None, None, silicon_percent, "LG M50")
+        utils.update_parameters(
+            parameters, temperature, None, None, silicon_percent, "LG M50"
+        )
 
         fast_solver = pybamm.CasadiSolver(
-            "safe", dt_max=3600, extra_options_setup={"max_num_steps": 1000}
+            "safe", dt_max=3600, extra_options_setup={"max_num_steps": 700}
         )
         s = pybamm.step.string
+        # c_rate = utils.get_virtual_c_rate(c_rate)
         cycling_experiment = pybamm.Experiment(
             [
                 (
                     s(
-                        f"Discharge at {c_rate} C for 10 hours or until 2.5 V",
-                        period="1 hour",
+                        f"Discharge at {c_rate} C for 3 hours or until 2.5 V",
+                        period="30 minutes",
                     ),
-                    s(f"Charge at {c_rate} C until 4.3 V", period="30 minutes"),
-                    # s(f"Hold at 4.1 V until 50 mA", period="30 minutes"),
+                    s(f"Charge at {c_rate} C until 4.0 V", period="30 minutes"),
+                    # s(f"Hold at 4.1 V until 50 mA", period="10 hours"),
                 )
             ]
             * cycles,
         )
 
         print("Running experiment")
+        if anode_thickness != None:
+            parameters.update(
+                {
+                    "Negative electrode thickness [m]": anode_thickness * 1e-6,
+                    "Separator thickness [m]": seperator_thickness * 1e-6,
+                }
+            )
         sim = pybamm.Simulation(
             model,
             parameter_values=parameters,
             solver=fast_solver,
             experiment=cycling_experiment,
         )
-        if seperator_thickness != None and anode_thickness != None:
-            parameters.update({"Separator thickness [m]":seperator_thickness  *1e-6,
-                           "Negative electrode thickness [m]":anode_thickness *1e-6})
         sol = sim.solve(calc_esoh=False, save_at_cycles=1)
         print("Number of Cycles: ", len(sol.cycles))
         print("Solution took: ", sol.solve_time)
@@ -87,7 +95,6 @@ def simulate_lab2(request):
                 )
             }
         )
-        
 
         experiment_result3 = [
             {"title": "interfacial current density [A.m-2]"},
@@ -99,11 +106,10 @@ def simulate_lab2(request):
                         "X-averaged negative electrode primary interfacial current density [A.m-2]": "Graphite",
                         "X-averaged negative electrode secondary interfacial current density [A.m-2]": "Silicon",
                     },
-                    "interfacial current density [A.m-2]"
+                    "interfacial current density [A.m-2]",
                 )
             },
         ]
-
 
         experiment_result4 = [
             {"title": "Loss of Lithium"},

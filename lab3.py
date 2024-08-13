@@ -40,7 +40,7 @@ def simulate_lab3(request):
 
         final_result = []
         graphs = []
-        
+
         experiment = pybamm.Experiment(
             [
                 (
@@ -58,16 +58,17 @@ def simulate_lab3(request):
             model, parameter_values=parameters, experiment=experiment
         )
         print("Running simulation Cycling\n")
-        solver = pybamm.CasadiSolver("safe", dt_max=0.01)
+        solver = pybamm.CasadiSolver(
+            "safe", dt_max=0.01, extra_options_setup={"max_num_steps": 500}
+        )
         sol = sim.solve(solver=solver, save_at_cycles=1, initial_soc=initial_charge)
 
-        
         # Prepare data for plotting
         experiment_result = [{"title": "Capacity over Cycles"}]
         graphs.append(
             {
                 "name": "Cycle",
-                "round":True,
+                "round": True,
                 "values": sol.summary_variables["Cycle number"].tolist(),
             }
         )
@@ -84,7 +85,11 @@ def simulate_lab3(request):
         experiment_result = [{"title": "Voltage over Cycles"}]
 
         experiment_result.append(
-            {"graphs": utils.plot_against_cycle(sol, cycles, "Voltage [V]", "Voltage", True)}
+            {
+                "graphs": utils.plot_against_cycle(
+                    sol, cycles, "Voltage [V]", "Voltage", True
+                )
+            }
         )
         final_result.append(experiment_result)
 
@@ -94,47 +99,48 @@ def simulate_lab3(request):
         cycle1_charge, cycle1_discharge = utils.split_at_peak(
             sol.cycles[0]["Voltage [V]"].entries.tolist()
         )
-        
+
         cycle1_crg_cap = sol.cycles[0]["Throughput capacity [A.h]"].entries.tolist()[
             : len(cycle1_charge)
         ]
-        
+
         cycle1_discharge, tmp = utils.split_at_valley(cycle1_discharge)
-        cycle1_dsc_cap = utils.norm_array_start(sol.cycles[0]["Throughput capacity [A.h]"].entries.tolist()[
-            len(cycle1_charge) + 1 :len(cycle1_charge) + 1  + len(cycle1_discharge)
-        ])
-        
-        
-        
+        cycle1_dsc_cap = utils.norm_array_start(
+            sol.cycles[0]["Throughput capacity [A.h]"].entries.tolist()[
+                len(cycle1_charge) + 1 : len(cycle1_charge) + 1 + len(cycle1_discharge)
+            ]
+        )
+
         cycle2_charge, cycle2_discharge = utils.split_at_peak(
             sol.cycles[1]["Voltage [V]"].entries.tolist()
         )
-        
+
         cycle2_crg_cap = sol.cycles[1]["Throughput capacity [A.h]"].entries.tolist()[
             : len(cycle2_charge)
         ]
-        
+
         cycle2_discharge, tmp = utils.split_at_valley(cycle2_discharge)
-        cycle2_dsc_cap = utils.norm_array_start(sol.cycles[1]["Throughput capacity [A.h]"].entries.tolist()[
-            len(cycle2_charge) + 1 :len(cycle2_charge) + 1  + len(cycle2_discharge)
-        ])
-        
-        
-        
-        
+        cycle2_dsc_cap = utils.norm_array_start(
+            sol.cycles[1]["Throughput capacity [A.h]"].entries.tolist()[
+                len(cycle2_charge) + 1 : len(cycle2_charge) + 1 + len(cycle2_discharge)
+            ]
+        )
+
         cycleL_charge, cycleL_discharge = utils.split_at_peak(
             sol.cycles[-1]["Voltage [V]"].entries.tolist()
         )
-        
-        cycleL_crg_cap = sol.cycles[-1][
-            "Throughput capacity [A.h]"
-        ].entries.tolist()[: len(cycleL_charge)]
+
+        cycleL_crg_cap = sol.cycles[-1]["Throughput capacity [A.h]"].entries.tolist()[
+            : len(cycleL_charge)
+        ]
 
         cycleL_discharge, tmp = utils.split_at_valley(cycleL_discharge)
 
-        cycleL_dsc_cap = utils.norm_array_start(sol.cycles[-1][
-            "Throughput capacity [A.h]"
-        ].entries.tolist()[len(cycleL_charge) + 1 :len(cycleL_charge) + 1 + len(cycleL_discharge)])
+        cycleL_dsc_cap = utils.norm_array_start(
+            sol.cycles[-1]["Throughput capacity [A.h]"].entries.tolist()[
+                len(cycleL_charge) + 1 : len(cycleL_charge) + 1 + len(cycleL_discharge)
+            ]
+        )
 
         graphs.append(
             {
@@ -149,7 +155,7 @@ def simulate_lab3(request):
                 "values": cycle1_charge,
             }
         )
-        
+
         graphs.append(
             {
                 "name": "Throughput capacity [A.h]",
@@ -198,7 +204,7 @@ def simulate_lab3(request):
                 "values": cycle1_discharge,
             }
         )
-        
+
         graphs.append(
             {
                 "name": "Throughput capacity [A.h]",
@@ -212,7 +218,6 @@ def simulate_lab3(request):
                 "values": cycle2_discharge,
             }
         )
-
 
         graphs.append(
             {
@@ -230,7 +235,6 @@ def simulate_lab3(request):
         experiment_result.append({"graphs": graphs})
 
         final_result.append(experiment_result)
-
 
         return jsonify(final_result)
 

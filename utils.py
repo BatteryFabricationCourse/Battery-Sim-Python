@@ -286,7 +286,7 @@ def run_charging_experiments(
     experiment_result = [{"title": f"{mode.capitalize()[:-1]}ing at different C Rates"}]
     graphs = []
     model = pybamm.lithium_ion.SPM()
-    solver = pybamm.CasadiSolver("fast")
+    solver = pybamm.CasadiSolver("fast", extra_options_setup={"max_num_steps": 10})
     y_axis_label = None
     minV, maxV = get_voltage_limits(battery_type)
     for c_rate in c_rates:
