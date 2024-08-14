@@ -84,8 +84,8 @@ def simulate_lab2(request):
             "Total lithium [mol]": "Total",
         }
         experiment_result1 = [
-            {"title": "Total Lithium in electrodes"},
-            {"graphs": utils.plot_graphs_against_cycle(sol, cycles, plots)},
+            {"title": "Lithium in Electrodes"},
+            {"graphs": utils.plot_graphs_against_cycle(sol, cycles, plots, "Lithium amount [mol]")},
         ]
         experiment_result2 = [{"title": "Capacity over Cycles"}]
         experiment_result2.append(
@@ -97,7 +97,7 @@ def simulate_lab2(request):
         )
 
         experiment_result3 = [
-            {"title": "interfacial current density [A.m-2]"},
+            {"title": "Interfacial Current Density"},
             {
                 "graphs": utils.plot_graphs_against_cycle(
                     sol,
@@ -125,9 +125,9 @@ def simulate_lab2(request):
         ]
 
         final_result = [
-            experiment_result1,
             experiment_result2,
             experiment_result3,
+            experiment_result1,
             experiment_result4,
         ]
         return jsonify(final_result)
