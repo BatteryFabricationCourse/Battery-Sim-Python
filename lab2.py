@@ -42,19 +42,21 @@ def simulate_lab2(request):
         )
 
         fast_solver = pybamm.CasadiSolver(
-            "safe", dt_max=3600, extra_options_setup={"max_num_steps": 700}
+            mode="safe", dt_max=0.01, extra_options_setup={"max_num_steps": 600}, return_solution_if_failed_early=True
         )
         s = pybamm.step.string
         # c_rate = utils.get_virtual_c_rate(c_rate)
         cycling_experiment = pybamm.Experiment(
             [
                 (
+                    
                     s(
-                        f"Discharge at {c_rate} C for 3 hours or until 2.5 V",
-                        period="30 minutes",
+                        f"Discharge at {c_rate} C for 11 hours or until 2.5 V",
+                        period="1 minutes",
                     ),
-                    s(f"Charge at {c_rate} C until 4.0 V", period="30 minutes"),
-                    # s(f"Hold at 4.1 V until 50 mA", period="10 hours"),
+                    s(f"Charge at {c_rate} C for 11 hours until 4.0 V", period="1 minutes"
+                      ),
+                    #s(f"Hold at 4.0 V for 1 hour or until 50 mA", period="0.5 minutes"),
                 )
             ]
             * cycles,
@@ -87,15 +89,26 @@ def simulate_lab2(request):
             {"title": "Lithium in Electrodes"},
             {"graphs": utils.plot_graphs_against_cycle(sol, cycles, plots, "Lithium amount [mol]")},
         ]
-        experiment_result2 = [{"title": "Capacity over Cycles"}]
-        experiment_result2.append(
-            {
-                "graphs": utils.plot_against_cycle(
-                    sol, cycles, "Discharge capacity [A.h]", "Capacity"
-                )
-            }
-        )
-
+        
+        capacity_graph = []
+        capacity_graph.append(
+                {
+                    "name": "Cycle",
+                    "round": False,
+                    # "values": utils.interpolate_array(sol.summary_variables["Cycle number"].tolist(), 24, True),
+                    "values": sol.summary_variables["Cycle number"].tolist(),
+                }
+            )
+        capacity_graph.append(
+                {
+                    "name": "Discharge capacity [A.h]",
+                    # "fname": f"{c_rates[len(c_rates)-i]}C",
+                    "fname": f"Capacity",
+                    "values": sol.summary_variables["Measured capacity [A.h]"].tolist(),
+                    # "values": utils.interpolate_array(sol.summary_variables["Capacity [A.h]"].tolist(),24)
+                }
+            )
+        experiment_result2 = [{"title": "Capacity over Cycles"},{"graphs": capacity_graph}]
         experiment_result3 = [
             {"title": "Interfacial Current Density"},
             {
