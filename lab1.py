@@ -54,6 +54,7 @@ def simulate_lab1(request):
         i = 0
         for c_rate in c_rates:
             i = i + 1
+            #v_crate = float(c_rate)
             v_crate = utils.get_virtual_c_rate(float(c_rate))
             print("V C-rate: ", v_crate, " for ", c_rate)
 
@@ -69,18 +70,26 @@ def simulate_lab1(request):
             )
 
             c_model = pybamm.lithium_ion.SPM(
-                {"SEI": "ec reaction limited", "thermal": "lumped"}
+                {"SEI": "ec reaction limited"}
             )
             sim = pybamm.Simulation(
                 c_model, parameter_values=parameters, experiment=c_experiment
             )
             print("Running simulation Cycling\n")
             solver = pybamm.CasadiSolver(
-                "safe", extra_options_setup={"max_num_steps": 10}
+                "safe", extra_options_setup={"max_num_steps": 200}
             )
             sol: pybamm.Solution = sim.solve(solver=solver, save_at_cycles=1)
             # print(sol.summary_variables.keys())
 
+            cap = []
+            if battery_type == "NCA":
+                cap = sol.summary_variables["Capacity [A.h]"].tolist()
+            elif battery_type == "LFP":
+                cap = sol.summary_variables["Capacity [A.h]"].tolist()
+            else:
+                cap = utils.transform_to_inverse_bezier_curve(sol.summary_variables["Capacity [A.h]"], -c_rate * cycles /550.0)
+            
             cycling_graphs.append(
                 {
                     "name": "Cycle",
@@ -94,7 +103,7 @@ def simulate_lab1(request):
                     "name": "Discharge capacity [A.h]",
                     # "fname": f"{c_rates[len(c_rates)-i]}C",
                     "fname": f"{c_rate}C",
-                    "values": sol.summary_variables["Capacity [A.h]"].tolist(),
+                    "values": cap,
                     # "values": utils.interpolate_array(sol.summary_variables["Capacity [A.h]"].tolist(),24)
                 }
             )

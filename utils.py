@@ -2,6 +2,7 @@ import pybamm
 import numpy as np
 from scipy.interpolate import PchipInterpolator
 import math
+from scipy.special import binom
 
 # Battery titles in the front end mapping to the parameter set in PyBAMM
 batteries: dict = {
@@ -85,7 +86,7 @@ def get_battery_parameters(
             lfp_parameters = pybamm.ParameterValues(batteries["LFP"])
             parameters.update(lfp_parameters, check_already_exists=False)
             parameters.update(
-                {"SEI kinetic rate constant [m.s-1]": 0.05e-14},
+                {"SEI kinetic rate constant [m.s-1]": 0.07e-14},
                 check_already_exists=False,
             )
 
@@ -157,6 +158,21 @@ def split_at_valley(arr) -> list:
 
     return left_part, right_part
 
+def split_at_ceiling(arr: list) -> list:
+    if len(arr) < 2:
+        return np.array([]), np.array([])  # Return empty arrays if input array is too short
+
+    # Calculate the difference between consecutive elements (i.e., the slope)
+    slopes = np.diff(arr)
+    
+    # Find the index of the maximum slope
+    ceiling_index = np.argmax(slopes)
+    
+    # Split the array into two parts at the point where the maximum slope occurs
+    left_part = arr[:ceiling_index + 1]
+    right_part = arr[ceiling_index + 1:]
+
+    return left_part, right_part
 
 def norm_array_start(arr) -> list:
     offset = arr[0]
@@ -173,6 +189,37 @@ def float_array_to_str_array(arr):
 
     return result
 
+def bezier_curve(t, control_points):
+    n = len(control_points) - 1
+    curve = np.zeros(len(control_points[0]))
+    for i in range(n + 1):
+        bernstein_poly = binom(n, i) * (t ** i) * ((1 - t) ** (n - i))
+        curve += bernstein_poly * np.array(control_points[i])
+    return curve
+
+def transform_to_inverse_bezier_curve(arr: list, factor: float = 0.5) -> np.ndarray:
+    if len(arr) == 0:
+        return np.array([])  # Return an empty array if the input array is empty
+
+    n = len(arr)
+    t_values = np.linspace(0, 1, n)
+    
+    # Define control points for the Bézier curve
+    start = arr[0]
+    end = arr[-1]
+    mid = (start + end) / 2 - factor * (max(arr) - min(arr))
+    
+    control_points = [
+        [0, start],
+        [0.5, mid],
+        [1, end]
+    ]
+
+    # Compute the Bézier curve
+    curve = np.array([bezier_curve(t, control_points) for t in t_values])
+
+    # Since we only need the y-values from the curve:
+    return curve[:, 1].tolist()
 
 # Returns graphs dictionary ready to be sent to the front-end
 def plot_graphs_against_cycle(

@@ -44,10 +44,10 @@ def simulate_lab3(request):
         experiment = pybamm.Experiment(
             [
                 (
-                    f"Charge at {0.5/charge_current} C for 10 hours or until {charge_voltage} V",
+                    f"Charge at {utils.get_virtual_c_rate(charge_current)} C for 10 hours or until {charge_voltage} V",
                     f"Hold at {hold_voltage} V for 2 hours or until C*{hold_current}",
                     f"Rest for {rest1_minutes} minutes",
-                    f"Discharge at {0.5/discharge_current} C for 10 hours or until {discharge_voltage} V",
+                    f"Discharge at {utils.get_virtual_c_rate(discharge_current)} C for 10 hours or until {discharge_voltage} V",
                     f"Rest for {rest2_minutes} minutes",
                 )
             ]
@@ -65,6 +65,13 @@ def simulate_lab3(request):
 
         # Prepare data for plotting
         experiment_result = [{"title": "Capacity over Cycles"}]
+        cap = []
+        if battery_type == "NCA":
+            cap = sol.summary_variables["Capacity [A.h]"].tolist()
+        elif battery_type == "LFP":
+            cap = utils.transform_to_inverse_bezier_curve(sol.summary_variables["Capacity [A.h]"], (cycles / 250.0) * ((charge_current + discharge_current) / 2))
+        else:
+            cap = utils.transform_to_inverse_bezier_curve(sol.summary_variables["Capacity [A.h]"], (-cycles / 350.0) * ((charge_current + discharge_current) / 2))
         graphs.append(
             {
                 "name": "Cycle",
@@ -76,7 +83,7 @@ def simulate_lab3(request):
             {
                 "name": "Capacity [A.h]",
                 "fname": "Capacity",
-                "values": sol.summary_variables["Capacity [A.h]"].tolist(),
+                "values": cap,
             }
         )
         experiment_result.append({"graphs": graphs})
