@@ -88,7 +88,7 @@ def simulate_lab1(request):
             elif battery_type == "LFP":
                 cap = sol.summary_variables["Capacity [A.h]"].tolist()
             else:
-                cap = utils.transform_to_inverse_bezier_curve(sol.summary_variables["Capacity [A.h]"], -c_rate * cycles /550.0)
+                cap = utils.transform_to_inverse_bezier_curve(sol.summary_variables["Capacity [A.h]"], c_rate * cycles /550.0)
             
             cycling_graphs.append(
                 {
