@@ -101,10 +101,10 @@ def simulate_lab2(request):
             )
         capacity_graph.append(
                 {
-                    "name": "Discharge capacity [A.h]",
+                    "name": "Throughput capacity [A.h]",
                     # "fname": f"{c_rates[len(c_rates)-i]}C",
                     "fname": f"Capacity",
-                    "values": sol.summary_variables["Measured capacity [A.h]"].tolist(),
+                    "values": sol.summary_variables["Throughput capacity [A.h]"].tolist(),
                     # "values": utils.interpolate_array(sol.summary_variables["Capacity [A.h]"].tolist(),24)
                 }
             )

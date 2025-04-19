@@ -177,7 +177,7 @@ def split_at_ceiling(arr: list) -> list:
 def norm_array_start(arr) -> list:
     offset = arr[0]
     for i in range(0, len(arr)):
-        print(i, ": ", arr[i], " - ", offset)
+        # print(i, ": ", arr[i], " - ", offset)
         arr[i] -= offset
     return arr
 
